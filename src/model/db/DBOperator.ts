@@ -79,6 +79,17 @@ export default class DBOperator implements IDBOperator {
         // 接続処理実施
         await connection.initialize();
 
+        if (this.config.dbtype === 'sqlite') {
+            try {
+                await connection.query('PRAGMA journal_mode = WAL;');
+                await connection.query('PRAGMA busy_timeout = 10000;'); // 10 seconds
+                this.log.system.info('SQLite WAL mode enabled and busy_timeout set to 10s');
+            } catch (err) {
+                this.log.system.error('failed to set SQLite PRAGMAs');
+                this.log.system.error(err as any);
+            }
+        }
+
         return connection;
     }
 
