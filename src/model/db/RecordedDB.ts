@@ -5,6 +5,8 @@ import Recorded from '../../db/entities/Recorded';
 import Thumbnail from '../../db/entities/Thumbnail';
 import VideoFile from '../../db/entities/VideoFile';
 import StrUtil from '../../util/StrUtil';
+import ILogger from '../ILogger';
+import ILoggerModel from '../ILoggerModel';
 import IPromiseRetry from '../IPromiseRetry';
 import DBUtil from './DBUtil';
 import IDBOperator from './IDBOperator';
@@ -12,10 +14,16 @@ import IRecordedDB, { FindAllOption, RecordedColumnOption } from './IRecordedDB'
 
 @injectable()
 export default class RecordedDB implements IRecordedDB {
+    private log: ILogger;
     private op: IDBOperator;
     private promieRetry: IPromiseRetry;
 
-    constructor(@inject('IDBOperator') op: IDBOperator, @inject('IPromiseRetry') promieRetry: IPromiseRetry) {
+    constructor(
+        @inject('ILoggerModel') logger: ILoggerModel,
+        @inject('IDBOperator') op: IDBOperator,
+        @inject('IPromiseRetry') promieRetry: IPromiseRetry,
+    ) {
+        this.log = logger.getLogger();
         this.op = op;
         this.promieRetry = promieRetry;
     }
@@ -46,8 +54,8 @@ export default class RecordedDB implements IRecordedDB {
             }
             await queryRunner.commitTransaction();
         } catch (err: any) {
-            console.error(err);
-            hasError = err;
+            this.log.system.error(err);
+            hasError = true;
             await queryRunner.rollbackTransaction();
         } finally {
             await queryRunner.release();
