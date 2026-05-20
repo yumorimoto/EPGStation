@@ -1,94 +1,51 @@
-# Linux / macOS 用 セットアップマニュアル
+# Debian LXC / Ansible 用 セットアップマニュアル
 
-本マニュアルでは、Linux / macOS 環境におけるセットアップ手順を解説します
+本マニュアルでは、Debian 13 (Trixie) LXC 環境における Ansible を用いたセットアップ手順を解説します。
 
 ## セットアップ
 
-1. **Node.js, Mirakurun, FFmpeg/FFprobe, Python (2.7, v3.5, v3.6, or v3.7), GCC** がインストール済みであることを確認する
+リポジトリに含まれる Ansible Playbook を使用することで、依存パッケージのインストールから EPGStation と mirakc の起動までを自動で行うことができます。
 
-    ```bash
-    $ node --version
-    $ curl -o - http://<MirakurunURL>:<Port>/api/version
-    $ ffmpeg -version
-    $ python --version
-    $ gcc --version
-    ```
+1. **Ansible の準備**
+   実行元 (ホストOSまたは他の管理マシン) に Ansible がインストールされている必要があります。
+   ```bash
+   $ sudo apt install ansible
+   ```
 
-    FFmpeg/FFprobe についてデフォルトでは `/usr/local/bin/` にインストールされていると想定しています  
-    違う場所にインストールされている場合は `config.yml` を修正してください
+2. **インベントリの作成**
+   LXC コンテナの IP アドレスや SSH 接続情報を記載した `inventory.ini` を作成します。
+   ```ini
+   [epgstation]
+   192.168.1.100 ansible_user=root
+   ```
 
-2. EPGStation のインストール
+3. **Playbook の実行**
+   ```bash
+   $ ansible-playbook -i inventory.ini ansible/setup-lxc.yml
+   ```
+   この Playbook は以下の処理を行います。
+   - 必要なシステムパッケージ (Node.js, FFmpeg, Python3, build-essential, sqlite3 など) のインストール
+   - SQLite3 regexp 拡張のコンパイル
+   - mirakc のインストールおよび systemd への登録・起動
+   - EPGStation のビルド、依存モジュール (`npm ci`) のインストール
+   - config.yml の生成 (mirakc 連携および sqlite3 regexp の設定)
+   - EPGStation を systemd (epgstation.service) として登録・起動
 
-    ```bash
-    $ git clone https://github.com/l3tnun/EPGStation.git
-    $ cd EPGStation
-    $ npm run all-install
-    $ npm run build
-    ```
+## EPGStation の起動 / 終了 (systemd)
 
-3. 設定ファイルの作成
+Ansible 実行後は systemd によって管理されるため、OS 起動時に自動で EPGStation と mirakc が起動します。
 
-    ```bash
-    $ cp config/config.yml.template config/config.yml
-    $ cp config/operatorLogConfig.sample.yml config/operatorLogConfig.yml
-    $ cp config/epgUpdaterLogConfig.sample.yml config/epgUpdaterLogConfig.yml
-    $ cp config/serviceLogConfig.sample.yml config/serviceLogConfig.yml
-    $ cp config/enc.js.template config/enc.js
-    ```
+- サービスのステータス確認
+  ```bash
+  $ systemctl status epgstation
+  ```
 
-4. 設定ファイルの編集
+- サービスの再起動
+  ```bash
+  $ systemctl restart epgstation
+  ```
 
-    - 詳細な設定は [詳細マニュアル](conf-manual.md) を参照
-
-    ```yaml
-    port: 8888
-    mirakurunPath: 'http+unix://%2Fvar%2Frun%2Fmirakurun.sock/'
-    ```
-
-    Mirakurun が別ホストで動作している場合は `mirakurunPath: 'http://<MirakurunURL>:<Port>'`
-
-## EPGStation の起動 / 終了
-
--   手動で起動する場合
-
-    ```
-    $ npm start
-    ```
-
--   自動で起動する場合
-
-    -   [pm2](http://pm2.keymetrics.io/) を利用して自動起動設定が可能です
-    -   初回のみ以下の起動設定が必要です
-
-    ```
-    $ sudo npm install pm2 -g
-    $ sudo pm2 startup <OS名>
-    $ pm2 start dist/index.js --name "epgstation"
-    $ pm2 save
-    ```
-
--   手動で終了する場合
-
-    ```
-    $ npm stop
-    ```
-
--   自動起動した EPGStation を終了する場合
-
-    ```
-    $ pm2 stop epgstation
-    ```
-
--   自動起動登録した EPGStation を削除する場合
-
-    ```
-    $ pm2 delete epgstation
-    ```
-
-## MySQL 使用時の注意
-
-EPGStation 使用中は MySQL のバイナリログが大量に生成されてディスクを圧迫するので、MySQL の設定を変えることを推奨します
-
-```
-expire_logs_days = 1
-```
+- サービスの停止
+  ```bash
+  $ systemctl stop epgstation
+  ```

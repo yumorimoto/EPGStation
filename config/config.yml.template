@@ -1,10 +1,10 @@
 port: 8888
-mirakurunPath: http+unix://%2Fvar%2Frun%2Fmirakurun.sock/
+mirakurunPath: 'http://localhost:40772'
 
 dbtype: sqlite
 # sqlite:
 #   extensions:
-#     - '/hoge/regexp.dylib'
+#     - '/opt/epgstation/regexp.so'
 #   regexp: true
 
 # dbtype: mysql

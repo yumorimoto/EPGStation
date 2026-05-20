@@ -1,0 +1,15 @@
+[Unit]
+Description=mirakc
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/etc/mirakc
+ExecStart=/usr/local/bin/mirakc -c /etc/mirakc/config.yml
+Restart=always
+RestartSec=10
+Environment="RUST_LOG=info"
+
+[Install]
+WantedBy=multi-user.target

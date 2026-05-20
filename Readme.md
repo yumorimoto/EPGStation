@@ -40,39 +40,18 @@ PC からの閲覧でもモダンな UI で操作可能です
 
 ## 動作環境
 
--   Linux / macOS / ~~Windows~~
+-   Linux (Debian LXC 向け)
 -   [Node.js](http://nodejs.org/) : ^18.16.1
--   [Mirakurun](https://github.com/Chinachu/Mirakurun) : ^3.8.0 or [mirakc](https://github.com/mirakc/mirakc) : ^3.1.10
+-   [mirakc](https://github.com/mirakc/mirakc) (推奨) or [Mirakurun](https://github.com/Chinachu/Mirakurun)
 -   いずれかのデータベース
     -   [SQLite3](https://www.sqlite.org/)（設定不要だが検索機能に制限あり）[標準]
         -   [SQLite3 使用時の正規表現での検索の有効化について](doc/sqlite3-regexp.md)
-    -   [MySQL](https://www.mysql.com/jp/) ([MariaDB](https://mariadb.org/))【推奨(要設定)】※文字コードは utf8mb4
-        -   [Mirakurun 3.9.0-beta.24 以降の設定について](doc/mysql-mirakurun-3.9.0-beta.24.md)
-    -   ~~[PostgreSQL](https://www.postgresql.org/) (version 9.5 以上)~~
 -   [FFmpeg](http://ffmpeg.org/)
 
-sqlite3 パッケージのインストール時にバイナリが存在しなかった場合は次の環境も必要
-
--   for Linux / macOS
-    -   [Python v3.x](https://www.python.org/) node-gyp にて必要
-    -   [GCC](https://gcc.gnu.org/) node-gyp にて必要
--   ~~for Windows~~
-    -   ~~[windows-build-tools](https://npmjs.com/package/windows-build-tools) node-gyp にて必要~~
-
-### 構築済み推奨環境
-
--   [docker-mirakurun-epgstation](https://github.com/l3tnun/docker-mirakurun-epgstation)
-
--   [nvenc + docker 環境での構築例](https://github.com/kazuki0824/EPGStation-nvenc-docker)
-    [(created by kazuki0824)](https://github.com/kazuki0824)
-
----
 
 ## セットアップ方法
 
-### [Linux / macOS 用セットアップマニュアル](doc/linux-setup.md)
-
-### ~~[Windows 用セットアップマニュアル](doc/windows-setup.md)~~
+### [Debian LXC / Ansible 用セットアップマニュアル](doc/linux-setup.md)
 
 ### [字幕表示 / 低遅延配信用セットアップマニュアル](doc/caption-lowlatency-setup.md)
 
@@ -151,9 +130,7 @@ sqlite3 パッケージのインストール時にバイナリが存在しなか
 
 -   EPGStation 上の動画再生を OS 上のアプリケーションで行うことが出来ます
 
-    -   [config.yml 内の設定 (iOS, Android, macOS, Windows)](doc/conf-manual.md#urlscheme)
-    -   [macOS 用の URL Scheme 設定方法](doc/mac-url-scheme.md)
-    -   [Windows 用の URL Scheme 設定方法](doc/windows-url-scheme.md)
+    -   [config.yml 内の設定 (iOS, Android)](doc/conf-manual.md#urlscheme)
 
 -   上記以外の環境での設定は WebUI の設定で各ブラウザごとに設定してください
 
