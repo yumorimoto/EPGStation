@@ -49,3 +49,26 @@ Ansible 実行後は systemd によって管理されるため、OS 起動時に
   ```bash
   $ systemctl stop epgstation
   ```
+
+## pm2 から systemd への移行方法
+
+以前のバージョンで `pm2` を使用して EPGStation を自動起動していた場合、以下の手順で `pm2` の管理から `systemd` へ移行できます。
+
+1. **pm2 で動作している EPGStation を停止・削除する**
+   現在 pm2 で実行されているプロセスを停止し、リストから削除した上で状態を保存します。これにより OS 再起動時に pm2 経由で起動されなくなります。
+   ```bash
+   $ pm2 stop epgstation
+   $ pm2 delete epgstation
+   $ pm2 save
+   ```
+
+2. **pm2 の自動起動設定を無効化する (オプション)**
+   もし pm2 で他に動かしているアプリケーションがなく、pm2 自体が不要になる場合は、自動起動設定を解除してアンインストールします。
+   ```bash
+   $ pm2 unstartup
+   $ npm uninstall -g pm2
+   ```
+
+3. **systemd での起動**
+   その後、上記の Ansible Playbook を実行すると自動で `systemd` のサービスとして登録・起動されます。
+   (手動でサービスファイルを作成した場合は、`sudo systemctl daemon-reload` の後、`sudo systemctl enable --now epgstation` を実行してください)
