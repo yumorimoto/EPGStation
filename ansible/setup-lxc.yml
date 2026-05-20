@@ -6,7 +6,7 @@
     epgstation_dir: /opt/epgstation
     mirakc_version: "3.2.3"
     node_version: "18"
-    sqlite_version: "3450300"
+    sqlite_version: "3460100"
     sqlite_year: "2024"
 
   tasks:
