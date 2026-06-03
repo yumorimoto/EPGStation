@@ -42,6 +42,9 @@ class ExecutionManagementModel implements IExecutionManagementModel {
             // タイムアウト設定
             const timerId = setTimeout(() => {
                 this.log.system.error(`get execution error: ${priority}`);
+                this.log.system.error(
+                    `execution id ${exeQueueData.id} timed out. Current queue length: ${this.exeQueue.length}`,
+                );
                 // listener から削除
                 this.exeEventEmitter.removeListener(ExecutionManagementModel.UNLOCK_EVENT, onDone);
 
@@ -62,6 +65,18 @@ class ExecutionManagementModel implements IExecutionManagementModel {
                 // listener から削除
                 this.exeEventEmitter.removeListener(ExecutionManagementModel.UNLOCK_EVENT, onDone);
             };
+
+            if (
+                this.exeEventEmitter.listenerCount(ExecutionManagementModel.UNLOCK_EVENT) >=
+                this.exeEventEmitter.getMaxListeners()
+            ) {
+                this.log.system.warn(
+                    `Max listeners exceeded! Queue length: ${this.exeQueue.length}. Details: ${JSON.stringify(this.exeQueue)}`,
+                );
+                this.log.system.warn(
+                    `Current request attempting to add listener: id ${exeQueueData.id}, priority ${exeQueueData.priority}`,
+                );
+            }
 
             // unlock されるたびに発行される
             this.exeEventEmitter.on(ExecutionManagementModel.UNLOCK_EVENT, onDone);
