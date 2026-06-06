@@ -34,8 +34,10 @@ export default class RecordedHistoryDB implements IRecordedHistoryDB {
             await queryRunner.manager.delete(RecordedHistory, {});
 
             // 挿入処理
-            for (const item of items) {
-                await queryRunner.manager.insert(RecordedHistory, item);
+            const chunkSize = 500;
+            for (let i = 0; i < items.length; i += chunkSize) {
+                const chunk = items.slice(i, i + chunkSize);
+                await queryRunner.manager.insert(RecordedHistory, chunk);
             }
             await queryRunner.commitTransaction();
         } catch (err: any) {
