@@ -37,8 +37,10 @@ export default class RecordedTagDB implements IRecordedTagDB {
             await queryRunner.manager.delete(RecordedTag, {});
 
             // 挿入処理
-            for (const item of items) {
-                await queryRunner.manager.insert(RecordedTag, item);
+            const chunkSize = 500;
+            for (let i = 0; i < items.length; i += chunkSize) {
+                const chunk = items.slice(i, i + chunkSize);
+                await queryRunner.manager.insert(RecordedTag, chunk);
             }
             await queryRunner.commitTransaction();
         } catch (err: any) {

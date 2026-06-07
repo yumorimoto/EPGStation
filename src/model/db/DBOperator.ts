@@ -48,6 +48,8 @@ export default class DBOperator implements IDBOperator {
             connection = new DataSource({
                 type: 'sqlite',
                 database: path.join(appRootPath, 'data', 'database.db'),
+                enableWAL: true,
+                busyErrorRetry: 1000,
                 synchronize: false,
                 logging: false,
                 entities: [entitie],

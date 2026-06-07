@@ -90,8 +90,10 @@ export default class ProgramDB implements IProgramDB {
             await queryRunner.manager.delete(Program, deleteOption);
 
             // 挿入処理
-            for (const value of values) {
-                await queryRunner.manager.insert(Program, value);
+            const chunkSize = 500;
+            for (let i = 0; i < values.length; i += chunkSize) {
+                const chunk = values.slice(i, i + chunkSize);
+                await queryRunner.manager.insert(Program, chunk);
             }
 
             await queryRunner.commitTransaction();
