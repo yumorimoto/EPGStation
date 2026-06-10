@@ -20,8 +20,12 @@ const isDualMono = parseInt(process.env.AUDIOCOMPONENTTYPE, 10) === 2;
 const programName = process.env.NAME || '';
 const programExtended = process.env.EXTENDED || '';
 const channelName = process.env.CHANNELNAME || '';
-const genre1 = process.env.GENRE1 || '';
 const durationMs = parseInt(process.env.DURATION, 10) || 0;
+
+// Combine GENRE1 and SUBGENRE1 if both are available
+const envGenre1 = process.env.GENRE1 || '';
+const envSubGenre1 = process.env.SUBGENRE1 || '';
+const genre1 = envSubGenre1 ? `${envGenre1} - ${envSubGenre1}` : envGenre1;
 
 // Parse the year from the START_AT timestamp
 const startAtMs = parseInt(process.env.START_AT, 10);
@@ -156,7 +160,9 @@ if (isDualMono) {
     // Ensure standard stereo channel layout for the output streams
     '-ac', '2',
     // Copy the original audio streams without re-encoding to perfectly preserve quality/surround sound
-    '-c:a', 'copy'
+    '-c:a', 'copy',
+    // Tag the first audio stream (Main) as Japanese
+    '-metadata:s:a:0', 'language=jpn'
   );
 } else {
   // SCENARIO C: Standard Broadcast
