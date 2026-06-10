@@ -19,6 +19,13 @@ const videoHeight = parseInt(process.env.VIDEORESOLUTION, 10);
 const isDualMono = parseInt(process.env.AUDIOCOMPONENTTYPE, 10) === 2;
 const programName = process.env.NAME || '';
 const programExtended = process.env.EXTENDED || '';
+const channelName = process.env.CHANNELNAME || '';
+const genre1 = process.env.GENRE1 || '';
+const durationMs = parseInt(process.env.DURATION, 10) || 0;
+
+// Parse the year from the START_AT timestamp
+const startAtMs = parseInt(process.env.START_AT, 10);
+const broadcastYear = !isNaN(startAtMs) ? new Date(startAtMs).getFullYear().toString() : '';
 
 // Detect if the program is marked as bilingual [二] or multiplex [多]
 const isBilingualOrMultiplex = programName.includes('[二]') || programName.includes('[多]') ||
@@ -37,7 +44,14 @@ if (isBilingualOrMultiplex && !isDualMono) {
   probesizeSize = '100M';
 }
 
-const audioBitrate = videoHeight > 720 ? '192k' : '128k';
+// Dynamic Video Bitrate based on source height
+let videoBitrate = '5M';
+if (videoHeight <= 480) {
+  videoBitrate = '1.5M';
+} else if (videoHeight <= 720) {
+  videoBitrate = '3M';
+}
+
 const preset = 'medium';
 const codec = 'h264_qsv';
 
@@ -75,10 +89,18 @@ args.push(
   '-metadata', `description=${programExtended}`
 );
 
+// Inject additional optional metadata if available
+if (channelName) args.push('-metadata', `network=${channelName}`);
+if (genre1) args.push('-metadata', `genre=${genre1}`);
+if (broadcastYear) args.push('-metadata', `date=${broadcastYear}`);
+
+
 // --- Video Filter Configuration ---
 // vpp_qsv=deinterlace=2: Uses advanced hardware deinterlacing
 // vpp_qsv=framerate=30000/1001: Sets the framerate to 29.97fps
 // vpp_qsv=rate=1: Maintains the framerate
+// Note: We deliberately DO NOT scale the video here. The original resolution (1080, 720, or 480)
+// is naturally preserved by FFmpeg.
 const videoFilter = 'vpp_qsv=deinterlace=2,vpp_qsv=framerate=30000/1001,vpp_qsv=rate=1';
 args.push('-vf', videoFilter);
 
@@ -89,7 +111,7 @@ args.push(
   // Encoder Preset (e.g., fast, medium, slow)
   '-preset', preset,
   // Target Video Bitrate
-  '-vb', '5M',
+  '-vb', videoBitrate,
   // Enable lookahead for better bitrate distribution
   '-look_ahead', '1',
   // Set the depth of the lookahead buffer to 30 frames
@@ -97,19 +119,11 @@ args.push(
 );
 
 // --- Audio Configuration & Mapping ---
-args.push(
-  // Audio Codec
-  '-c:a', 'aac',
-  // Audio Sample Rate
-  '-ar', '48000',
-  // Audio Bitrate
-  '-ab', audioBitrate
-);
-
 if (isDualMono) {
   // SCENARIO A: Dual Mono
   // The broadcast contains a single stereo stream where Left = Main Language, Right = Sub Language.
   // We use filter_complex with the channelsplit filter to isolate these into two separate mono tracks.
+  // Note: We MUST re-encode to AAC here because we are passing the audio through a filter.
   args.push(
     '-filter_complex', '[0:a:0]channelsplit=channel_layout=stereo[left][right]',
     // Map the video stream
@@ -120,6 +134,12 @@ if (isDualMono) {
     '-map', '[right]',
     // Force mono layout for the output audio streams
     '-ac', '1',
+    // Audio Codec
+    '-c:a', 'aac',
+    // Audio Bitrate (128k is sufficient for a mono track)
+    '-ab', '128k',
+    // Audio Sample Rate
+    '-ar', '48000',
     // Tag the first audio stream (Main) as Japanese
     '-metadata:s:a:0', 'language=jpn'
   );
@@ -134,13 +154,17 @@ if (isDualMono) {
     // The trailing '?' ensures FFmpeg doesn't fail if no audio streams are found (though unlikely).
     '-map', '0:a?',
     // Ensure standard stereo channel layout for the output streams
-    '-ac', '2'
+    '-ac', '2',
+    // Copy the original audio streams without re-encoding to perfectly preserve quality/surround sound
+    '-c:a', 'copy'
   );
 } else {
   // SCENARIO C: Standard Broadcast
   // Standard single audio track. We just let FFmpeg map the default video and audio.
   args.push(
-    '-ac', '2'
+    '-ac', '2',
+    // Copy the original audio streams without re-encoding to perfectly preserve quality/surround sound
+    '-c:a', 'copy'
   );
 }
 
@@ -158,8 +182,33 @@ console.error(`Executing: ${ffmpeg} ${commandString}`);
 
 const child = spawn(ffmpeg, args);
 
+// --- Progress Tracking ---
+// EPGStation listens to process.stdout for JSON objects indicating progress.
+// We parse the frame count from stderr and calculate the percentage based on the video duration.
+// Assuming 29.97 FPS (which we forced in the video filter):
+const FPS = 29.97;
+const totalFrames = (durationMs / 1000) * FPS;
+
 child.stderr.on('data', (data) => {
-  console.error(String(data));
+  const logStr = String(data);
+  console.error(logStr); // Still write to stderr for debugging
+
+  // EPGStation tracks progress using a JSON output to stdout.
+  // We look for 'frame=  XXX' in the ffmpeg stderr output.
+  const frameMatch = logStr.match(/frame=\s*(\d+)/);
+  if (frameMatch && totalFrames > 0) {
+    const currentFrame = parseInt(frameMatch[1], 10);
+    let percent = (currentFrame / totalFrames) * 100;
+    if (percent > 100) percent = 100;
+
+    // EPGStation's EncoderModel specifically looks for this JSON format on stdout
+    const progressLog = JSON.stringify({
+      type: 'progress',
+      percent: percent,
+      log: logStr.trim()
+    });
+    console.log(progressLog);
+  }
 });
 
 child.on('error', (err) => {
