@@ -26,6 +26,12 @@
           - jq
           - libsqlite3-dev
           - rsync
+          - cmake
+          - ninja-build
+          - g++
+          - autoconf
+          - pkg-config
+          - libtool
         state: present
 
     - name: Install Node.js
@@ -35,10 +41,60 @@
       args:
         creates: /usr/bin/node
 
-    - name: Download mirakc binary
-      get_url:
-        url: "https://github.com/mirakc/mirakc/releases/download/{{ mirakc_version }}/mirakc-linux-x86_64"
-        dest: "/usr/local/bin/mirakc"
+    - name: Install Rust
+      shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      args:
+        creates: /root/.cargo/bin/rustc
+
+    - name: Clone mirakc-arib repository
+      git:
+        repo: https://github.com/mirakc/mirakc-arib
+        dest: /root/mirakc-arib
+        recursive: yes
+        update: yes
+
+    - name: Configure mirakc-arib with CMake
+      command: cmake -S . -B build -G Ninja -D CMAKE_BUILD_TYPE=Release
+      args:
+        chdir: /root/mirakc-arib
+        creates: /root/mirakc-arib/build/build.ninja
+
+    - name: Build mirakc-arib vendor dependencies
+      command: ninja -C build vendor
+      args:
+        chdir: /root/mirakc-arib
+
+    - name: Build mirakc-arib
+      command: ninja -C build
+      args:
+        chdir: /root/mirakc-arib
+        creates: /root/mirakc-arib/build/bin/mirakc-arib
+
+    - name: Install mirakc-arib binary
+      copy:
+        src: /root/mirakc-arib/build/bin/mirakc-arib
+        dest: /usr/local/bin/mirakc-arib
+        remote_src: yes
+        mode: '0755'
+
+    - name: Clone mirakc repository
+      git:
+        repo: https://github.com/mirakc/mirakc
+        dest: /root/mirakc
+        update: yes
+
+    - name: Build mirakc
+      shell: source /root/.cargo/env && cargo build --release
+      args:
+        executable: /bin/bash
+        chdir: /root/mirakc
+        creates: /root/mirakc/target/release/mirakc
+
+    - name: Install mirakc binary
+      copy:
+        src: /root/mirakc/target/release/mirakc
+        dest: /usr/local/bin/mirakc
+        remote_src: yes
         mode: '0755'
 
     - name: Create mirakc config directory
