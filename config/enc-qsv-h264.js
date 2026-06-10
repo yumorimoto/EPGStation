@@ -157,8 +157,6 @@ if (isDualMono) {
     // Map ALL audio streams found in the input to the output.
     // The trailing '?' ensures FFmpeg doesn't fail if no audio streams are found (though unlikely).
     '-map', '0:a?',
-    // Ensure standard stereo channel layout for the output streams
-    '-ac', '2',
     // Copy the original audio streams without re-encoding to perfectly preserve quality/surround sound
     '-c:a', 'copy',
     // Tag the first audio stream (Main) as Japanese
@@ -168,7 +166,6 @@ if (isDualMono) {
   // SCENARIO C: Standard Broadcast
   // Standard single audio track. We just let FFmpeg map the default video and audio.
   args.push(
-    '-ac', '2',
     // Copy the original audio streams without re-encoding to perfectly preserve quality/surround sound
     '-c:a', 'copy'
   );
