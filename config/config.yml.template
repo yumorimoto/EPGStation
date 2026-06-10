@@ -44,6 +44,10 @@ encode:
       cmd: '%NODE% %ROOT%/config/enc.js'
       suffix: .mp4
       rate: 4.0
+    - name: QSV H.264
+      cmd: '%NODE% %ROOT%/config/enc-qsv-h264.js'
+      suffix: .mp4
+      rate: 4.0
 
 urlscheme:
     m2ts:
