@@ -85,3 +85,34 @@ This path involves abandoning the Vue ecosystem for Svelte, a compiler-based fra
 For a lean website running across devices, **Svelte** provides the absolute best performance and smallest bundle sizes. However, because the current app heavily leverages Vuetify and Inversify, the **Vue 3 upgrade is the more pragmatic choice**. It offers an iterative path (you can migrate files one by one conceptually) and retains familiarity with the Material UI structure provided by Vuetify, even with the required refactor to Pinia and the Composition API.
 
 If bundle size and absolute maximum rendering performance on low-end mobile devices are the absolute top priorities, and you are willing to invest in a complete rewrite, **Svelte 5 with Runes** is the superior modern architecture.
+
+---
+
+## Additional Considerations
+
+### 1. Decoupling the Web UI from Core EPGStation
+**Feasibility: Very High (Already Decoupled by Design)**
+The current Web UI is already a Single Page Application (SPA) that communicates with the core backend almost entirely via REST/WebSockets (as defined in `api.yml`).
+Because the frontend and backend are logically separated:
+- You do not need to modify the core Node.js backend to build a new UI.
+- Any new framework (Vue 3, Svelte, React) can simply import the existing API specifications and make network requests exactly as the current client does.
+
+### 2. Coexistence of Legacy and New UI During Development
+**Feasibility: Very High**
+Because the UI is decoupled from the core business logic, it is very easy to run the legacy Vue 2 UI alongside a new framework during development:
+- **Development Mode:** You can run the legacy UI via `npm run watch` (e.g., on `localhost:8888`) while simultaneously running a Vite/Svelte development server (e.g., on `localhost:5173`). Both clients can communicate with the same running EPGStation backend API.
+- **Production Mode:** You could configure the EPGStation backend (or a reverse proxy like Nginx) to serve the legacy UI at the root path (`/`) and the new UI at a sub-path (e.g., `/v2/` or `/next/`), allowing users to test the new UI without losing access to the stable version.
+
+### 3. Minimum Viable Migration (Vue 2 -> Vue 3 Only)
+If the goal is strictly to migrate off the End-of-Life (EOL) Vue 2 with the absolute minimum amount of effort, while retaining the current architecture (OOP Class Components and Inversify), the path looks like this:
+
+**The "Low-Hanging Fruit" Path:**
+1. **Upgrade to Vue 3:** Swap Vue 2.7 for Vue 3.
+2. **Swap Decorators:** The official `vue-class-component` and `vue-property-decorator` do not officially support Vue 3. You would need to swap them for community alternatives like `vue-facing-decorator`. This allows you to keep your existing `@Component` and `@Prop` syntax with minimal refactoring.
+3. **Retain Inversify:** Since Inversify is just a vanilla TypeScript DI container, it is completely framework agnostic. You can continue using it in Vue 3 exactly as you do now, bypassing the need to rewrite 140+ files into Pinia stores.
+4. **Upgrade Vuetify:** You *must* upgrade to Vuetify 3, as Vuetify 2 does not support Vue 3. This will still be the largest chunk of work, as Vuetify 3 has breaking changes regarding grid layouts, component names, and prop signatures.
+5. **Modernize Build Tool (Optional but Recommended):** Migrate from Vue CLI (Webpack) to Vite to significantly improve build times and developer experience.
+
+**Summary of Minimum Path:**
+- **Code Impacted:** ~30-40% (Mainly template changes for Vuetify 3 and minor `<script>` changes to use new decorators).
+- **Effort:** Medium. You save weeks of time by not rewriting the Inversify state models or converting classes to the Composition API, but you still face the Vuetify 3 breaking changes.
