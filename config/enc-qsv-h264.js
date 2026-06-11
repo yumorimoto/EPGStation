@@ -218,8 +218,8 @@ child.stderr.on('data', (data) => {
   const frameMatch = logStr.match(/frame=\s*(\d+)/);
   if (frameMatch && totalFrames > 0) {
     const currentFrame = parseInt(frameMatch[1], 10);
-    let percent = (currentFrame / totalFrames) * 100;
-    if (percent > 100) percent = 100;
+    let percent = currentFrame / totalFrames;
+    if (percent > 1) percent = 1;
 
     // EPGStation's EncoderModel specifically looks for this JSON format on stdout
     const progressLog = JSON.stringify({
