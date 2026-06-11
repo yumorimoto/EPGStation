@@ -209,25 +209,42 @@ const child = spawn(ffmpeg, args);
 const FPS = 29.97;
 const totalFrames = (durationMs / 1000) * FPS;
 
+const fs = require('fs');
+
 child.stderr.on('data', (data) => {
   const logStr = String(data);
   console.error(logStr); // Still write to stderr for debugging
 
-  // EPGStation tracks progress using a JSON output to stdout.
-  // We look for 'frame=  XXX' in the ffmpeg stderr output.
-  const frameMatch = logStr.match(/frame=\s*(\d+)/);
-  if (frameMatch && totalFrames > 0) {
-    const currentFrame = parseInt(frameMatch[1], 10);
-    let percent = currentFrame / totalFrames;
-    if (percent > 1) percent = 1;
+  // Split the data chunk by lines, as ffmpeg may output multiple lines in a single event
+  const lines = logStr.split('\n');
 
-    // EPGStation's EncoderModel specifically looks for this JSON format on stdout
-    const progressLog = JSON.stringify({
-      type: 'progress',
-      percent: percent,
-      log: logStr.trim()
-    });
-    console.log(progressLog);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim() === '') continue;
+
+    // EPGStation tracks progress using a JSON output to stdout.
+    // We look for 'frame=  XXX' in the ffmpeg stderr output.
+    const frameMatch = line.match(/frame=\s*(\d+)/);
+    if (frameMatch && totalFrames > 0) {
+      const currentFrame = parseInt(frameMatch[1], 10);
+      let percent = currentFrame / totalFrames;
+      if (percent > 1) percent = 1;
+
+      // EPGStation's EncoderModel specifically looks for this JSON format on stdout
+      const progressLog = JSON.stringify({
+        type: 'progress',
+        percent: percent,
+        log: line.trim()
+      });
+      console.log(progressLog);
+
+      // Optional: Write the generated JSON to a debug file to verify what we're sending
+      try {
+        fs.appendFileSync('/tmp/enc-qsv-h264-progress-debug.log', progressLog + '\n');
+      } catch (err) {
+        // Ignore file errors
+      }
+    }
   }
 });
 
