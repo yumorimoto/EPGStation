@@ -208,6 +208,7 @@ class EncoderModel implements IEncoderModel {
                     AUDIOCOMPONENTTYPE:
                         typeof recorded.audioComponentType === 'number' ? recorded.audioComponentType.toString(10) : '',
                     CHANNELID: typeof recorded.channelId === 'number' ? recorded.channelId.toString(10) : '',
+                    SERVICEID: typeof channel.serviceId === 'number' ? channel.serviceId.toString(10) : '',
                     CHANNELNAME: typeof channel.name === 'string' ? channel.name : '',
                     HALF_WIDTH_CHANNELNAME: typeof channel.halfWidthName === 'string' ? channel.halfWidthName : '',
                     GENRE1: typeof recorded.genre1 === 'number' ? recorded.genre1.toString(10) : '',

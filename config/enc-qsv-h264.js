@@ -21,15 +21,24 @@ const programName = process.env.NAME || '';
 const programExtended = process.env.EXTENDED || '';
 const channelName = process.env.CHANNELNAME || '';
 const durationMs = parseInt(process.env.DURATION, 10) || 0;
+const serviceId = process.env.SERVICEID || '';
 
 // Combine GENRE1 and SUBGENRE1 if both are available
 const envGenre1 = process.env.GENRE1 || '';
 const envSubGenre1 = process.env.SUBGENRE1 || '';
 const genre1 = envSubGenre1 ? `${envGenre1} - ${envSubGenre1}` : envGenre1;
 
-// Parse the year from the START_AT timestamp
+// Parse the full Japan Standard Time (JST) date string from the START_AT timestamp
 const startAtMs = parseInt(process.env.START_AT, 10);
-const broadcastYear = !isNaN(startAtMs) ? new Date(startAtMs).getFullYear().toString() : '';
+let broadcastDate = '';
+if (!isNaN(startAtMs)) {
+  const date = new Date(startAtMs);
+  // Convert to JST (UTC+9) and format as ISO-8601 (e.g. 2026-06-10T16:00:00+09:00)
+  const jstOffset = 9 * 60; // 9 hours in minutes
+  const localDate = new Date(date.getTime() + (date.getTimezoneOffset() + jstOffset) * 60000);
+  const pad = (num) => num.toString().padStart(2, '0');
+  broadcastDate = `${localDate.getFullYear()}-${pad(localDate.getMonth() + 1)}-${pad(localDate.getDate())}T${pad(localDate.getHours())}:${pad(localDate.getMinutes())}:${pad(localDate.getSeconds())}+09:00`;
+}
 
 // Detect if the program is marked as bilingual [二] or multiplex [多]
 const isBilingualOrMultiplex = programName.includes('[二]') || programName.includes('[多]') ||
@@ -96,7 +105,7 @@ args.push(
 // Inject additional optional metadata if available
 if (channelName) args.push('-metadata', `network=${channelName}`);
 if (genre1) args.push('-metadata', `genre=${genre1}`);
-if (broadcastYear) args.push('-metadata', `date=${broadcastYear}`);
+if (broadcastDate) args.push('-metadata', `date=${broadcastDate}`);
 
 
 // --- Video Filter Configuration ---
@@ -122,6 +131,11 @@ args.push(
   '-look_ahead_depth', '30'
 );
 
+// Define base stream mapping based on Service ID (Program ID) to ensure we only capture
+// the streams belonging to the specific program, ignoring remnant streams from previous/parallel programs.
+const videoMap = serviceId ? `0:p:${serviceId}:v:0` : '0:v:0';
+const audioMapBase = serviceId ? `0:p:${serviceId}:a` : '0:a';
+
 // --- Audio Configuration & Mapping ---
 if (isDualMono) {
   // SCENARIO A: Dual Mono
@@ -129,9 +143,10 @@ if (isDualMono) {
   // We use filter_complex with the channelsplit filter to isolate these into two separate mono tracks.
   // Note: We MUST re-encode to AAC here because we are passing the audio through a filter.
   args.push(
-    '-filter_complex', '[0:a:0]channelsplit=channel_layout=stereo[left][right]',
-    // Map the video stream
-    '-map', '0:v:0',
+    // Split the very first audio stream mapped by the Service ID
+    '-filter_complex', `[${audioMapBase}:0]channelsplit=channel_layout=stereo[left][right]`,
+    // Map the specific program's video stream
+    '-map', videoMap,
     // Map the Left channel output from channelsplit as Track 1
     '-map', '[left]',
     // Map the Right channel output from channelsplit as Track 2
@@ -152,11 +167,11 @@ if (isDualMono) {
   // The broadcast is flagged as having multiple languages/commentaries, but is NOT Dual Mono.
   // We rely on our boosted probe sizes to find all delayed physical audio streams.
   args.push(
-    // Map the video stream
-    '-map', '0:v:0',
-    // Map ALL audio streams found in the input to the output.
+    // Map the specific program's video stream
+    '-map', videoMap,
+    // Map ALL audio streams belonging to the specific program.
     // The trailing '?' ensures FFmpeg doesn't fail if no audio streams are found (though unlikely).
-    '-map', '0:a?',
+    '-map', `${audioMapBase}?`,
     // Copy the original audio streams without re-encoding to perfectly preserve quality/surround sound
     '-c:a', 'copy',
     // Tag the first audio stream (Main) as Japanese
@@ -164,8 +179,10 @@ if (isDualMono) {
   );
 } else {
   // SCENARIO C: Standard Broadcast
-  // Standard single audio track. We just let FFmpeg map the default video and audio.
+  // Standard single audio track. We explicitly map the specific program's video and audio.
   args.push(
+    '-map', videoMap,
+    '-map', `${audioMapBase}:0`,
     // Copy the original audio streams without re-encoding to perfectly preserve quality/surround sound
     '-c:a', 'copy'
   );
