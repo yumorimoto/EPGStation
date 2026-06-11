@@ -147,3 +147,54 @@ export default defineConfig({
 In a separate terminal, inside your new UI directory, run the dev server command.
 
 You can now open `http://localhost:5173` to view the new UI hot-reloading while it pulls live data from the stable backend running on port `8888`. You never have to restart the Node.js backend unless changing core API logic. The legacy UI remains accessible at `http://localhost:8888`.
+
+---
+
+## The Svelte 5 Rebuild Strategy (Option 3 Deep Dive)
+
+Given that migrating to Vuetify 3 essentially requires rewriting all templates anyway, moving to Svelte 5 is a highly logical choice to achieve long-term maintainability, superior performance, and much cleaner, boilerplate-free code.
+
+### AI/Developer Comfort Level with Svelte 5
+I am highly comfortable developing a Svelte 5 application from the ground up. Svelte 5's introduction of **Runes** (`$state`, `$derived`, `$effect`) maps extremely well to modern reactive programming patterns. Because Svelte compiles to vanilla JS and avoids complex Virtual DOM diffing, debugging and structuring data flow (especially for a data-heavy app like EPGStation) is actually much more straightforward than wrestling with Vue's reactivity proxies or Inversify decorators.
+
+### The Most Challenging Component: The EPG Guide Table
+You are entirely correct: **The main EPG Guide table is the most challenging and critical component to build.**
+It should absolutely be the very first major UI piece tackled. Here is why:
+
+1. **Virtualization & DOM Depth:** An EPG guide displaying hundreds of channels over 24+ hours generates massive amounts of DOM nodes. In Svelte, we will likely need to implement custom DOM virtualization (only rendering the programs currently visible in the viewport) to keep scrolling silky smooth on mobile devices.
+2. **Absolute Positioning Math:** EPG grids are rarely standard CSS tables. Programs are usually absolutely positioned based on start/end timestamps calculated against a dynamic pixel-per-minute ratio.
+3. **Continuous Time Sync:** The UI must display the current time line and automatically scroll/update as time passes without triggering a full page re-render.
+
+If we can build a highly performant, virtualized Svelte EPG grid that fetches data from the backend, the rest of the application (lists, settings, basic forms) will be comparatively trivial.
+
+### Recommended Phases for the Svelte 5 Rebuild
+
+If we proceed with a parallel ground-up rebuild, here is the exact phased approach:
+
+#### Phase 1: Foundation & Infrastructure (Week 1)
+- **Setup:** Initialize a new Vite + Svelte 5 (or SvelteKit SPA) project in a new directory (e.g., `client-svelte/`).
+- **Dev Proxy:** Configure `vite.config.js` to proxy `/api` and `/socket.io` to the running legacy backend.
+- **API Client:** Port the core API communication layer. Generate or manually write the typed `fetch` wrappers for the REST API (translating the existing Axios/Inversify models to clean ES modules).
+- **Global State:** Establish the basic Svelte Runes global state (e.g., User Config, Dark Mode, Server Status).
+
+#### Phase 2: "The Crucible" - The EPG Guide (Weeks 2-3)
+- **Data Fetching:** Implement the channel and schedule API calls.
+- **The Grid System:** Build the CSS Grid or Absolute Positioning math for the timeline and channel headers.
+- **Program Blocks:** Render individual program cards. Implement click handlers to open program detail dialogs.
+- **Virtualization (If needed):** If rendering the full grid causes lag on mobile, implement an intersection observer or calculated windowing system to cull off-screen programs.
+
+#### Phase 3: Live Video & Playback (Week 4)
+- **Video Player Component:** Port the HLS/MPEG-TS video playback logic. This involves cleanly integrating `hls.js` or `mpegts.js` within Svelte's `onMount` and `$effect` lifecycles to ensure proper cleanup when components are destroyed.
+- **Live Viewing:** Connect the video player to the channel selection from the EPG Guide.
+
+#### Phase 4: Recorded Programs & Search (Week 5)
+- **Recorded List:** Build the paginated lists for recorded shows. This involves standard Svelte `{#each}` blocks and is generally simple.
+- **Search & Rules:** Implement the search forms, date pickers, and keyword inputs. Recreate the API payload builders to save new recording rules.
+
+#### Phase 5: Settings & System Management (Week 6)
+- **Settings UI:** Port the user preference toggles, server settings, and log viewing components.
+- **WebSocket Integration:** Finalize the Socket.io connection to listen for real-time encode progress and system notifications, binding them to a global Svelte `$state` to trigger UI snackbars.
+
+#### Phase 6: Polish & Cutover (Week 7)
+- **Mobile Responsiveness:** Do a final sweep of CSS media queries and touch interactions.
+- **Build & Serve:** Configure the `npm run build` process to output the Svelte static files to the correct directory so the core EPGStation backend serves the new UI by default in production.
