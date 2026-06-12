@@ -139,6 +139,7 @@ export default interface IConfigFile {
         name: string;
         cmd: string;
         suffix?: string; // 非エンコードコマンドの場合 undefined
+        resolution?: string;
         rate?: number;
     }[];
 

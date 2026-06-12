@@ -192,6 +192,7 @@ class EncoderModel implements IEncoderModel {
                     SUBDIR: this.encodeOption.directory || '',
                     FFMPEG: config.ffmpeg,
                     FFPROBE: config.ffprobe,
+                    RESOLUTION: typeof encodeCmd.resolution !== 'undefined' ? encodeCmd.resolution : '',
                     NAME: recorded.name,
                     HALF_WIDTH_NAME: recorded.halfWidthName,
                     DESCRIPTION: recorded.description || '',

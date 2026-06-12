@@ -48,6 +48,12 @@ encode:
       cmd: '%NODE% %ROOT%/config/enc-qsv-h264.js'
       suffix: .mp4
       rate: 4.0
+      resolution: 1080 # Limits maximum output resolution. e.g., '720' will downscale 1080p to 720p, but leave 480p untouched.
+    - name: QSV H.264 (720p Max)
+      cmd: '%NODE% %ROOT%/config/enc-qsv-h264.js'
+      suffix: .mp4
+      rate: 4.0
+      resolution: 720
 
 urlscheme:
     m2ts:

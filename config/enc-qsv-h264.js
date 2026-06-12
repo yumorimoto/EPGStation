@@ -112,9 +112,19 @@ if (broadcastDate) args.push('-metadata', `date=${broadcastDate}`);
 // vpp_qsv=deinterlace=2: Uses advanced hardware deinterlacing
 // vpp_qsv=framerate=30000/1001: Sets the framerate to 29.97fps
 // vpp_qsv=rate=1: Maintains the framerate
-// Note: We deliberately DO NOT scale the video here. The original resolution (1080, 720, or 480)
-// is naturally preserved by FFmpeg.
-const videoFilter = 'vpp_qsv=deinterlace=2,vpp_qsv=framerate=30000/1001,vpp_qsv=rate=1';
+let videoFilter = 'vpp_qsv=deinterlace=2,vpp_qsv=framerate=30000/1001,vpp_qsv=rate=1';
+
+// Dynamic Resolution Scaling based on config.yml RESOLUTION parameter
+const maxResolution = parseInt(process.env.RESOLUTION, 10);
+if (!isNaN(maxResolution) && maxResolution > 0 && videoHeight > maxResolution) {
+  // If the source video is larger than the requested max resolution, scale it down.
+  // vpp_qsv hardware scaling requires w/h parameters. We scale height to maxResolution,
+  // and set width to -1 (or more accurately w=ow/oh*h in some contexts, but -1 keeps aspect ratio)
+  // For QSV, scale_qsv=-1:maxResolution or using vpp_qsv=h=maxResolution:w=-1 is preferred.
+  // However, vpp_qsv handles it best:
+  videoFilter += `,vpp_qsv=h=${maxResolution}:w=-1`;
+}
+
 args.push('-vf', videoFilter);
 
 // --- Video Encoding Settings ---
