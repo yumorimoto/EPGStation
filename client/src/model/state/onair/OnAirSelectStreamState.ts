@@ -86,11 +86,22 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
         ) {
             if (this.useURLScheme === true) {
                 // URL Scheme 使用時
-                if (typeof config.streamConfig.live.ts.m2ts !== 'undefined' && config.streamConfig.live.ts.m2ts.length > 0) {
+                const hasUrlSchemeDefined = (type: string) => {
+                    const schemeBlock = type === 'M2TS' ? config.urlscheme?.m2ts : config.urlscheme?.video;
+                    return typeof schemeBlock !== 'undefined';
+                };
+
+                if (typeof config.streamConfig.live.ts.m2ts !== 'undefined' && config.streamConfig.live.ts.m2ts.length > 0 && hasUrlSchemeDefined('M2TS')) {
                     this.streamTypes.push('M2TS');
-                    this.streamConfig['M2TS'] = config.streamConfig.live.ts.m2ts.map(c => {
-                        return c.name;
-                    });
+                    this.streamConfig['M2TS'] = config.streamConfig.live.ts.m2ts.map(c => c.name);
+                }
+                if (typeof config.streamConfig.live.ts.webm !== 'undefined' && config.streamConfig.live.ts.webm.length > 0 && hasUrlSchemeDefined('WebM')) {
+                    this.streamTypes.push('WebM');
+                    this.streamConfig['WebM'] = config.streamConfig.live.ts.webm;
+                }
+                if (typeof config.streamConfig.live.ts.mp4 !== 'undefined' && config.streamConfig.live.ts.mp4.length > 0 && hasUrlSchemeDefined('MP4')) {
+                    this.streamTypes.push('MP4');
+                    this.streamConfig['MP4'] = config.streamConfig.live.ts.mp4;
                 }
             } else {
                 // web 上での再生
@@ -158,7 +169,7 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
     }
 
     /**
-     * m2ts 形式のライブ視聴 URL 生成
+     * ライブ視聴 URL 生成
      * @return string | null URL Scheme の設定が見つからない場合は null を返す
      */
     public getStreamURL(): string | null {
@@ -173,16 +184,19 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
 
         if (settingURLScheme !== null && settingURLScheme.length > 0) {
             urlScheme = settingURLScheme;
-        } else if (config !== null) {
+        } else if (config !== null && typeof config.urlscheme !== 'undefined') {
             const schemeConfig = this.selectedStreamType === 'M2TS' ? config.urlscheme.m2ts : config.urlscheme.video;
-            if (UaUtil.isiOS() === true && typeof schemeConfig.ios !== 'undefined') {
-                urlScheme = schemeConfig.ios;
-            } else if (UaUtil.isAndroid() === true && typeof schemeConfig.android !== 'undefined') {
-                urlScheme = schemeConfig.android;
-            } else if (UaUtil.isMac() === true && typeof schemeConfig.mac !== 'undefined') {
-                urlScheme = schemeConfig.mac;
-            } else if (UaUtil.isWindows() === true && typeof schemeConfig.win !== 'undefined') {
-                urlScheme = schemeConfig.win;
+
+            if (typeof schemeConfig !== 'undefined') {
+                if (UaUtil.isiOS() === true && typeof schemeConfig.ios !== 'undefined') {
+                    urlScheme = schemeConfig.ios;
+                } else if (UaUtil.isAndroid() === true && typeof schemeConfig.android !== 'undefined') {
+                    urlScheme = schemeConfig.android;
+                } else if (UaUtil.isMac() === true && typeof schemeConfig.mac !== 'undefined') {
+                    urlScheme = schemeConfig.mac;
+                } else if (UaUtil.isWindows() === true && typeof schemeConfig.win !== 'undefined') {
+                    urlScheme = schemeConfig.win;
+                }
             }
         }
 
@@ -204,7 +218,7 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
     }
 
     /**
-     * m2ts 形式のプレイリストダウンロード URL 生成
+     * プレイリストダウンロード URL 生成
      * @return string | null URL Scheme の設定が見つからない場合は null を返す
      */
     public getPlayListURL(): string | null {
