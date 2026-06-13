@@ -84,43 +84,25 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
             typeof config.streamConfig.live !== 'undefined' &&
             typeof config.streamConfig.live.ts !== 'undefined'
         ) {
-            if (this.useURLScheme === true) {
-                // URL Scheme 使用時
-                const hasUrlSchemeDefined = (type: string) => {
-                    const schemeBlock = config.urlscheme?.live;
-                    return typeof schemeBlock !== 'undefined';
-                };
-
-                if (typeof config.streamConfig.live.ts.m2ts !== 'undefined' && config.streamConfig.live.ts.m2ts.length > 0 && hasUrlSchemeDefined('M2TS')) {
-                    this.streamTypes.push('M2TS');
-                    this.streamConfig['M2TS'] = config.streamConfig.live.ts.m2ts.map(c => c.name);
-                }
-                if (typeof config.streamConfig.live.ts.webm !== 'undefined' && config.streamConfig.live.ts.webm.length > 0 && hasUrlSchemeDefined('WebM')) {
-                    this.streamTypes.push('WebM');
-                    this.streamConfig['WebM'] = config.streamConfig.live.ts.webm;
-                }
-                if (typeof config.streamConfig.live.ts.mp4 !== 'undefined' && config.streamConfig.live.ts.mp4.length > 0 && hasUrlSchemeDefined('MP4')) {
-                    this.streamTypes.push('MP4');
-                    this.streamConfig['MP4'] = config.streamConfig.live.ts.mp4;
-                }
-            } else {
-                // web 上での再生
-                if (typeof config.streamConfig.live.ts.m2tsll !== 'undefined' && config.streamConfig.live.ts.m2tsll.length > 0) {
-                    this.streamTypes.push('M2TS-LL');
-                    this.streamConfig['M2TS-LL'] = config.streamConfig.live.ts.m2tsll;
-                }
-                if (typeof config.streamConfig.live.ts.webm !== 'undefined' && config.streamConfig.live.ts.webm.length > 0) {
-                    this.streamTypes.push('WebM');
-                    this.streamConfig['WebM'] = config.streamConfig.live.ts.webm;
-                }
-                if (typeof config.streamConfig.live.ts.mp4 !== 'undefined' && config.streamConfig.live.ts.mp4.length > 0) {
-                    this.streamTypes.push('MP4');
-                    this.streamConfig['MP4'] = config.streamConfig.live.ts.mp4;
-                }
-                if (typeof config.streamConfig.live.ts.hls !== 'undefined' && config.streamConfig.live.ts.hls.length > 0) {
-                    this.streamTypes.push('HLS');
-                    this.streamConfig['HLS'] = config.streamConfig.live.ts.hls;
-                }
+            if (typeof config.streamConfig.live.ts.m2ts !== 'undefined' && config.streamConfig.live.ts.m2ts.length > 0) {
+                this.streamTypes.push('M2TS');
+                this.streamConfig['M2TS'] = config.streamConfig.live.ts.m2ts.map(c => c.name);
+            }
+            if (typeof config.streamConfig.live.ts.m2tsll !== 'undefined' && config.streamConfig.live.ts.m2tsll.length > 0) {
+                this.streamTypes.push('M2TS-LL');
+                this.streamConfig['M2TS-LL'] = config.streamConfig.live.ts.m2tsll as any;
+            }
+            if (typeof config.streamConfig.live.ts.webm !== 'undefined' && config.streamConfig.live.ts.webm.length > 0) {
+                this.streamTypes.push('WebM');
+                this.streamConfig['WebM'] = config.streamConfig.live.ts.webm as any;
+            }
+            if (typeof config.streamConfig.live.ts.mp4 !== 'undefined' && config.streamConfig.live.ts.mp4.length > 0) {
+                this.streamTypes.push('MP4');
+                this.streamConfig['MP4'] = config.streamConfig.live.ts.mp4 as any;
+            }
+            if (typeof config.streamConfig.live.ts.hls !== 'undefined' && config.streamConfig.live.ts.hls.length > 0) {
+                this.streamTypes.push('HLS');
+                this.streamConfig['HLS'] = config.streamConfig.live.ts.hls as any;
             }
         }
 
@@ -165,7 +147,16 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
     private getStreamConfig(): string[] {
         const result = typeof this.selectedStreamType === 'undefined' ? [] : this.streamConfig[this.selectedStreamType];
 
-        return typeof result === 'undefined' ? [] : result;
+        if (typeof result === 'undefined') return [];
+
+        return result.map(item => {
+            if (typeof item === 'string') {
+                return item;
+            } else if (item && typeof (item as any).name === 'string') {
+                return (item as any).name;
+            }
+            return 'Unknown';
+        });
     }
 
     /**
