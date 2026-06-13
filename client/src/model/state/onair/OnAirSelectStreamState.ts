@@ -87,7 +87,7 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
             if (this.useURLScheme === true) {
                 // URL Scheme 使用時
                 const hasUrlSchemeDefined = (type: string) => {
-                    const schemeBlock = type === 'M2TS' ? config.urlscheme?.m2ts : config.urlscheme?.video;
+                    const schemeBlock = config.urlscheme?.live;
                     return typeof schemeBlock !== 'undefined';
                 };
 
@@ -185,7 +185,7 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
         if (settingURLScheme !== null && settingURLScheme.length > 0) {
             urlScheme = settingURLScheme;
         } else if (config !== null && typeof config.urlscheme !== 'undefined') {
-            const schemeConfig = this.selectedStreamType === 'M2TS' ? config.urlscheme.m2ts : config.urlscheme.video;
+            const schemeConfig = config.urlscheme.live;
 
             if (typeof schemeConfig !== 'undefined') {
                 if (UaUtil.isiOS() === true && typeof schemeConfig.ios !== 'undefined') {

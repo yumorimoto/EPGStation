@@ -9,7 +9,6 @@ thumbnail/*.jpg
 data/streamfiles/*
 .DS_Store
 config/*
-!config/enc-qsv-h264.js
 !config/*.template
 !config/*.sample.yml
 data/*.json

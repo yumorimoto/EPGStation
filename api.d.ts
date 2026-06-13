@@ -487,7 +487,7 @@ export interface Config {
     recorded: string[];
     encode: string[];
     urlscheme: {
-        m2ts: URLSchemeInfo;
+        live: URLSchemeInfo;
         video: URLSchemeInfo;
         download: URLSchemeInfo;
     };
