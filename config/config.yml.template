@@ -110,6 +110,15 @@ stream:
                       '%FFMPEG% -re -dual_mono_mode main -i pipe:0 -sn -threads 0 -c:a aac -ar 48000 -b:a 128k -ac 2 -c:v libx264 -vf yadif,scale=-2:480 -b:v 1500k -profile:v baseline -preset veryfast -tune fastdecode,zerolatency -movflags frag_keyframe+empty_moov+faststart+default_base_moof -y -f mp4 pipe:1'
 
             hls:
+                - name: Audio-Only (64k)
+                  cmd:
+                      '%FFMPEG% -re -dual_mono_mode main -i pipe:0 -vn -map 0:a -threads 0 -ignore_unknown -max_muxing_queue_size 1024 -f hls -hls_time 3 -hls_list_size 17 -hls_allow_cache 1 -hls_segment_filename %streamFileDir%/stream%streamNum%-%09d.ts -hls_flags delete_segments -c:a aac -ar 48000 -b:a 64k -ac 2 -flags +loop-global_header %OUTPUT%'
+                - name: 720p-QSV-Hybrid
+                  cmd:
+                      '%FFMPEG% -re -dual_mono_mode main -i pipe:0 -sn -map 0 -threads 0 -ignore_unknown -max_muxing_queue_size 1024 -f hls -hls_time 3 -hls_list_size 17 -hls_allow_cache 1 -hls_segment_filename %streamFileDir%/stream%streamNum%-%09d.ts -hls_flags delete_segments -c:a aac -ar 48000 -b:a 192k -ac 2 -c:v h264_qsv -global_quality:v 28 -look_ahead 0 -vf bwdif=mode=send_field:parity=auto:deint=all,scale=-2:720 -profile:v main -preset veryfast -flags +loop-global_header %OUTPUT%'
+                - name: 480p-QSV-Hybrid
+                  cmd:
+                      '%FFMPEG% -re -dual_mono_mode main -i pipe:0 -sn -map 0 -threads 0 -ignore_unknown -max_muxing_queue_size 1024 -f hls -hls_time 3 -hls_list_size 17 -hls_allow_cache 1 -hls_segment_filename %streamFileDir%/stream%streamNum%-%09d.ts -hls_flags delete_segments -c:a aac -ar 48000 -b:a 128k -ac 2 -c:v h264_qsv -global_quality:v 28 -look_ahead 0 -vf bwdif=mode=send_field:parity=auto:deint=all,scale=-2:480 -profile:v main -preset veryfast -flags +loop-global_header %OUTPUT%'
                 - name: 720p
                   cmd:
                       '%FFMPEG% -re -dual_mono_mode main -i pipe:0 -sn -map 0 -threads 0 -ignore_unknown
@@ -162,6 +171,12 @@ stream:
                       '%FFMPEG% -dual_mono_mode main -i pipe:0 -sn -threads 0 -c:a aac -ar 48000 -b:a 128k -ac 2 -c:v libx264 -vf yadif,scale=-2:480 -b:v 1500k -profile:v baseline -preset veryfast -tune fastdecode,zerolatency -movflags frag_keyframe+empty_moov+faststart+default_base_moof -y -f mp4 pipe:1'
 
             hls:
+                - name: 720p-QSV-Hybrid
+                  cmd:
+                      '%FFMPEG% -dual_mono_mode main -i pipe:0 -sn -map 0 -threads 0 -ignore_unknown -max_muxing_queue_size 1024 -f hls -hls_time 3 -hls_list_size 0 -hls_allow_cache 1 -hls_segment_filename %streamFileDir%/stream%streamNum%-%09d.ts -hls_flags delete_segments -c:a aac -ar 48000 -b:a 192k -ac 2 -c:v h264_qsv -global_quality:v 28 -look_ahead 0 -vf bwdif=mode=send_field:parity=auto:deint=all,scale=-2:720 -profile:v main -preset veryfast -flags +loop-global_header %OUTPUT%'
+                - name: 480p-QSV-Hybrid
+                  cmd:
+                      '%FFMPEG% -dual_mono_mode main -i pipe:0 -sn -map 0 -threads 0 -ignore_unknown -max_muxing_queue_size 1024 -f hls -hls_time 3 -hls_list_size 0 -hls_allow_cache 1 -hls_segment_filename %streamFileDir%/stream%streamNum%-%09d.ts -hls_flags delete_segments -c:a aac -ar 48000 -b:a 128k -ac 2 -c:v h264_qsv -global_quality:v 28 -look_ahead 0 -vf bwdif=mode=send_field:parity=auto:deint=all,scale=-2:480 -profile:v main -preset veryfast -flags +loop-global_header %OUTPUT%'
                 - name: 720p
                   cmd:
                       '%FFMPEG% -dual_mono_mode main -i pipe:0 -sn -map 0 -threads 0 -ignore_unknown
@@ -213,6 +228,12 @@ stream:
                       '%FFMPEG% -dual_mono_mode main -ss %SS% -i %INPUT% -sn -threads 0 -c:a aac -ar 48000 -b:a 128k -ac 2 -c:v libx264 -vf scale=-2:480 -b:v 1500k -profile:v baseline -preset veryfast -tune fastdecode,zerolatency -movflags frag_keyframe+empty_moov+faststart+default_base_moof -y -f mp4 pipe:1'
 
             hls:
+                - name: 720p-QSV-Hybrid
+                  cmd:
+                      '%FFMPEG% -dual_mono_mode main -ss %SS% -i %INPUT% -sn -threads 0 -ignore_unknown -max_muxing_queue_size 1024 -f hls -hls_time 3 -hls_list_size 0 -hls_allow_cache 1 -hls_segment_filename %streamFileDir%/stream%streamNum%-%09d.ts -hls_flags delete_segments -c:a aac -ar 48000 -b:a 192k -ac 2 -c:v h264_qsv -global_quality:v 28 -look_ahead 0 -vf scale=-2:720 -profile:v main -preset veryfast -flags +loop-global_header %OUTPUT%'
+                - name: 480p-QSV-Hybrid
+                  cmd:
+                      '%FFMPEG% -dual_mono_mode main -ss %SS% -i %INPUT% -sn -threads 0 -ignore_unknown -max_muxing_queue_size 1024 -f hls -hls_time 3 -hls_list_size 0 -hls_allow_cache 1 -hls_segment_filename %streamFileDir%/stream%streamNum%-%09d.ts -hls_flags delete_segments -c:a aac -ar 48000 -b:a 128k -ac 2 -c:v h264_qsv -global_quality:v 28 -look_ahead 0 -vf scale=-2:480 -profile:v main -preset veryfast -flags +loop-global_header %OUTPUT%'
                 - name: 720p
                   cmd:
                       '%FFMPEG% -dual_mono_mode main -ss %SS% -i %INPUT% -sn -threads 0 -ignore_unknown
