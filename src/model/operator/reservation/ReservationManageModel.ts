@@ -692,6 +692,7 @@ class ReservationManageModel implements IReservationManageModel {
 
         // ルールを取得
         const rule = await this.ruleDB.findId(ruleId, true).catch(err => {
+            finalize();
             this.log.system.error(`get rule error: ${ruleId}`);
             this.log.system.error(err);
             throw err;

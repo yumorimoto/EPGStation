@@ -201,10 +201,10 @@ class RecordingManageModel implements IRecordingManageModel {
 
                 const recorder = await this.provider();
                 if (recorder.setTimer(reserve, diff.isSuppressLog) === true) {
-                    this.log.system.debug(`add recording: ${reserve.id}`);
+                    this.log.system.debug(`add recording: ${reserve.id} ${reserve.shortName} ${reserve.startAt}`);
                     this.recordingIndex[reserve.id] = recorder;
                 } else {
-                    this.log.system.error(`add recording error: ${reserve.id}`);
+                    this.log.system.error(`add recording error: ${reserve.id} ${reserve.shortName} ${reserve.startAt}`);
                 }
             }
         }

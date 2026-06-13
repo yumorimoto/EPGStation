@@ -53,19 +53,22 @@ class EncodeManageModel implements IEncodeManageModel {
         // 実行権取得
         const exeId = await this.executeManagementModel.getExecution(EncodeManageModel.ADD_ENCODE_PRIPORITY);
 
-        // encoder を生成する
-        const encoder = await this.encoderModelProvider();
-        const option = this.createEncodeOption(addOption);
-        encoder.setOption(option);
+        let option: EncodeOption;
+        try {
+            // encoder を生成する
+            const encoder = await this.encoderModelProvider();
+            option = this.createEncodeOption(addOption);
+            encoder.setOption(option);
 
-        // queue に積む
-        this.waitQueue.push(encoder);
-        this.emitNeedsCheckQueue();
+            // queue に積む
+            this.waitQueue.push(encoder);
+            this.emitNeedsCheckQueue();
 
-        this.log.encode.info(`add new encode: ${option.encodeId}`);
-
-        // 実行権開放
-        this.executeManagementModel.unLockExecution(exeId);
+            this.log.encode.info(`add new encode: ${option.encodeId}`);
+        } finally {
+            // 実行権開放
+            this.executeManagementModel.unLockExecution(exeId);
+        }
 
         // イベント発行
         this.encodeEvent.emitAddEncode(option.encodeId);
@@ -267,22 +270,24 @@ class EncodeManageModel implements IEncodeManageModel {
 
         this.log.encode.info(`cancel encode: ${encodeId}`);
 
-        // runningQueue にあるので プロセスを殺す
-        const runningQueueItem = this.getRunnginQueueItem(encodeId);
-        if (typeof runningQueueItem !== 'undefined') {
-            await runningQueueItem.cancel();
-        } else {
-            // waitQueue から削除
-            this.waitQueue = this.waitQueue.filter(q => {
-                return q.getEncodeId() !== encodeId;
-            });
+        try {
+            // runningQueue にあるので プロセスを殺す
+            const runningQueueItem = this.getRunnginQueueItem(encodeId);
+            if (typeof runningQueueItem !== 'undefined') {
+                await runningQueueItem.cancel();
+            } else {
+                // waitQueue から削除
+                this.waitQueue = this.waitQueue.filter(q => {
+                    return q.getEncodeId() !== encodeId;
+                });
 
-            process.nextTick(() => {
-                this.emitNeedsCheckQueue();
-            });
+                process.nextTick(() => {
+                    this.emitNeedsCheckQueue();
+                });
+            }
+        } finally {
+            this.executeManagementModel.unLockExecution(exeId);
         }
-
-        this.executeManagementModel.unLockExecution(exeId);
 
         // イベント発行
         this.encodeEvent.emitCancelEncode(encodeId);

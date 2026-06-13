@@ -36,10 +36,16 @@ class StreamManageModel implements IStreamManageModel {
             this.executeManagementModel.unLockExecution(exeId);
         };
 
-        // stream id 割当
-        const streamId = this.getEmptyStreamId();
-        this.streams[streamId] = stream;
-        this.log.stream.info(`start stream: ${streamId.toString(10)}`);
+        let streamId;
+        try {
+            // stream id 割当
+            streamId = this.getEmptyStreamId();
+            this.streams[streamId] = stream;
+            this.log.stream.info(`start stream: ${streamId.toString(10)}`);
+        } catch (err) {
+            finalize();
+            throw err;
+        }
 
         try {
             await stream.start(streamId);
