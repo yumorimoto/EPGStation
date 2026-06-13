@@ -47,13 +47,13 @@ encode:
     - name: QSV H.264
       cmd: '%NODE% %ROOT%/config/enc-qsv-h264.js'
       suffix: .mp4
-      rate: 4.0
-      resolution: 1080 # Limits maximum output resolution. e.g., '720' will downscale 1080p to 720p, but leave 480p untouched.
+      # 'rate' is the timeout multiplier. QSV is fast, so allowing 2x the video duration before timing out is safe.
+      rate: 2.0
     - name: QSV H.264 (720p Max)
-      cmd: '%NODE% %ROOT%/config/enc-qsv-h264.js'
+      # Pass '-r 720' to cap the output resolution. 1080p is downscaled, but 480p is untouched.
+      cmd: '%NODE% %ROOT%/config/enc-qsv-h264.js -r 720'
       suffix: .mp4
-      rate: 4.0
-      resolution: 720
+      rate: 2.0
 
 urlscheme:
     m2ts:

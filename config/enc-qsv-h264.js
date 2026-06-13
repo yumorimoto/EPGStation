@@ -114,8 +114,14 @@ if (broadcastDate) args.push('-metadata', `date=${broadcastDate}`);
 // vpp_qsv=rate=1: Maintains the framerate
 let videoFilter = 'vpp_qsv=deinterlace=2,vpp_qsv=framerate=30000/1001,vpp_qsv=rate=1';
 
-// Dynamic Resolution Scaling based on config.yml RESOLUTION parameter
-const maxResolution = parseInt(process.env.RESOLUTION, 10);
+// Parse optional max resolution from command line arguments (e.g. -r 720)
+let maxResolution = NaN;
+const rIndex = process.argv.indexOf('-r');
+if (rIndex > -1 && rIndex + 1 < process.argv.length) {
+  maxResolution = parseInt(process.argv[rIndex + 1], 10);
+}
+
+// Dynamic Resolution Scaling
 if (!isNaN(maxResolution) && maxResolution > 0 && videoHeight > maxResolution) {
   // If the source video is larger than the requested max resolution, scale it down.
   // vpp_qsv hardware scaling requires w/h parameters. We scale height to maxResolution,
