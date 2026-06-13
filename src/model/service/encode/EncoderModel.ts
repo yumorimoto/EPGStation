@@ -39,6 +39,7 @@ class EncoderModel implements IEncoderModel {
     private timerId: NodeJS.Timer | null = null; // タイムアウト検知用タイマーid
     private isCanceld: boolean = false; // キャンセルが呼び出されたか?
     private progressInfo: EncodeProgressInfo | null = null;
+    private stdoutBuffer: string = '';
 
     constructor(
         @inject('ILoggerModel') logger: ILoggerModel,
@@ -208,6 +209,7 @@ class EncoderModel implements IEncoderModel {
                     AUDIOCOMPONENTTYPE:
                         typeof recorded.audioComponentType === 'number' ? recorded.audioComponentType.toString(10) : '',
                     CHANNELID: typeof recorded.channelId === 'number' ? recorded.channelId.toString(10) : '',
+                    SERVICEID: typeof channel.serviceId === 'number' ? channel.serviceId.toString(10) : '',
                     CHANNELNAME: typeof channel.name === 'string' ? channel.name : '',
                     HALF_WIDTH_CHANNELNAME: typeof channel.halfWidthName === 'string' ? channel.halfWidthName : '',
                     GENRE1: typeof recorded.genre1 === 'number' ? recorded.genre1.toString(10) : '',
@@ -218,6 +220,7 @@ class EncoderModel implements IEncoderModel {
                     SUBGENRE3: typeof recorded.subGenre3 === 'number' ? recorded.subGenre3.toString(10) : '',
                     START_AT: recorded.startAt.toString(10),
                     END_AT: recorded.endAt.toString(10),
+                    DURATION: recorded.duration.toString(10),
                     DROPLOG_ID: recorded.dropLogFile?.id.toString(10) || '',
                     DROPLOG_PATH: recorded.dropLogFile?.filePath || '',
                     ERROR_CNT: recorded.dropLogFile?.errorCnt.toString(10) || '',
@@ -316,19 +319,28 @@ class EncoderModel implements IEncoderModel {
             return;
         }
 
-        const logs = String(data).split('\n');
-        for (let j = 0; j < logs.length; j++) {
-            if (logs[j] != '') {
-                const log = JSON.parse(String(logs[j]));
-                this.log.encode.debug(log);
-                if (log.type === 'progress' && typeof log.percent === 'number' && typeof log.log === 'string') {
-                    this.progressInfo = {
-                        percent: log.percent,
-                        log: log.log,
-                    };
+        this.stdoutBuffer += String(data);
 
-                    // エンコード進捗変更通知
-                    this.encodeEvent.emitUpdateEncodeProgress();
+        let newlineIndex: number;
+        while ((newlineIndex = this.stdoutBuffer.indexOf('\n')) > -1) {
+            const line = this.stdoutBuffer.slice(0, newlineIndex).trim();
+            this.stdoutBuffer = this.stdoutBuffer.slice(newlineIndex + 1);
+
+            if (line !== '') {
+                try {
+                    const log = JSON.parse(line);
+                    this.log.encode.debug(log);
+                    if (log.type === 'progress' && typeof log.percent === 'number' && typeof log.log === 'string') {
+                        this.progressInfo = {
+                            percent: log.percent,
+                            log: log.log,
+                        };
+
+                        // エンコード進捗変更通知
+                        this.encodeEvent.emitUpdateEncodeProgress();
+                    }
+                } catch (err: any) {
+                    // JSON parsing might fail if a script output a non-JSON line (e.g. standard ffmpeg stderr mixed in)
                 }
             }
         }
