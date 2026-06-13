@@ -161,7 +161,7 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
      * m2ts 形式のライブ視聴 URL 生成
      * @return string | null URL Scheme の設定が見つからない場合は null を返す
      */
-    public getM2TSURL(): string | null {
+    public getStreamURL(): string | null {
         const channel = this.getChannelItem();
         if (typeof this.selectedStreamConfig === 'undefined' || channel === null) {
             return null;
@@ -174,14 +174,15 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
         if (settingURLScheme !== null && settingURLScheme.length > 0) {
             urlScheme = settingURLScheme;
         } else if (config !== null) {
-            if (UaUtil.isiOS() === true && typeof config.urlscheme.m2ts.ios !== 'undefined') {
-                urlScheme = config.urlscheme.m2ts.ios;
-            } else if (UaUtil.isAndroid() === true && typeof config.urlscheme.m2ts.android !== 'undefined') {
-                urlScheme = config.urlscheme.m2ts.android;
-            } else if (UaUtil.isMac() === true && typeof config.urlscheme.m2ts.mac !== 'undefined') {
-                urlScheme = config.urlscheme.m2ts.mac;
-            } else if (UaUtil.isWindows() === true && typeof config.urlscheme.m2ts.win !== 'undefined') {
-                urlScheme = config.urlscheme.m2ts.win;
+            const schemeConfig = this.selectedStreamType === 'M2TS' ? config.urlscheme.m2ts : config.urlscheme.video;
+            if (UaUtil.isiOS() === true && typeof schemeConfig.ios !== 'undefined') {
+                urlScheme = schemeConfig.ios;
+            } else if (UaUtil.isAndroid() === true && typeof schemeConfig.android !== 'undefined') {
+                urlScheme = schemeConfig.android;
+            } else if (UaUtil.isMac() === true && typeof schemeConfig.mac !== 'undefined') {
+                urlScheme = schemeConfig.mac;
+            } else if (UaUtil.isWindows() === true && typeof schemeConfig.win !== 'undefined') {
+                urlScheme = schemeConfig.win;
             }
         }
 
@@ -191,7 +192,10 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
         }
 
         // URL Schemeの準備
-        let viewURL = location.host + Util.getSubDirectory() + `/api/streams/live/${channel.id.toString(10)}/m2ts?mode=${this.selectedStreamConfig}`;
+        let viewURL =
+            location.host +
+            Util.getSubDirectory() +
+            `/api/streams/live/${channel.id.toString(10)}/${(this.selectedStreamType || 'm2ts').toLowerCase()}?mode=${this.selectedStreamConfig}`;
         if (urlScheme.match(/vlc-x-callback/)) {
             viewURL = encodeURIComponent(viewURL);
         }
@@ -203,12 +207,12 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
      * m2ts 形式のプレイリストダウンロード URL 生成
      * @return string | null URL Scheme の設定が見つからない場合は null を返す
      */
-    public getM2TPlayListURL(): string | null {
+    public getPlayListURL(): string | null {
         const channel = this.getChannelItem();
         if (typeof this.selectedStreamConfig === 'undefined' || channel === null) {
             return null;
         }
 
-        return `/api/streams/live/${channel.id.toString(10)}/m2ts/playlist?mode=${this.selectedStreamConfig}`;
+        return `/api/streams/live/${channel.id.toString(10)}/${(this.selectedStreamType || 'm2ts').toLowerCase()}/playlist?mode=${this.selectedStreamConfig}`;
     }
 }
