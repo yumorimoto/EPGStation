@@ -39,3 +39,9 @@ When we attempted to expand "Open in external app" to support `MP4` and `WebM`:
         #EXTINF:-1 tvg-id="${channel.id}" tvg-name="${channel.name}",${channel.name}
         http://${host}/api/streams/live/${channel.id}/${type}?mode=${mode}
         ```
+
+## Completed Changes
+
+These proposed fixes have been successfully implemented:
+1.  **Backend Changes:** Renamed the configuration block from `urlscheme.m2ts` to `urlscheme.live` to reflect its usage across formats. Created endpoints and backend handlers (`getLiveMp4StreamM3u8`, `getLiveWebmStreamM3u8`) to serve the wrapper `.m3u8` playlists for MP4 and WebM.
+2.  **Frontend Fixes:** Resolved the dropdown `.map()` mapping errors for `MP4` and `WebM`. Improved the `useURLScheme` toggle so that switching to a URL schema correctly preserves your selected stream format (like `MP4`) instead of rigidly defaulting to `M2TS`.
