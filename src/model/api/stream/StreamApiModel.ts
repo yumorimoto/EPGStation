@@ -389,6 +389,50 @@ export default class StreamApiModel implements IStreamApiModel {
         };
     }
 
+    public async getLiveWebmStreamM3u8(
+        host: string,
+        isSecure: boolean,
+        option: apid.LiveStreamOption,
+    ): Promise<IPlayList | null> {
+        const channel = await this.channelDB.findId(option.channelId);
+        if (channel === null) {
+            return null;
+        }
+
+        return {
+            name: encodeURIComponent(channel.name + '.m3u8'),
+            playList: this.apiUtil.createM3U8PlayListStr({
+                host: host,
+                isSecure: isSecure,
+                name: channel.name,
+                duration: 0,
+                baseUrl: `/api/streams/live/${option.channelId.toString(10)}/webm?mode=${option.mode}`,
+            }),
+        };
+    }
+
+    public async getLiveMp4StreamM3u8(
+        host: string,
+        isSecure: boolean,
+        option: apid.LiveStreamOption,
+    ): Promise<IPlayList | null> {
+        const channel = await this.channelDB.findId(option.channelId);
+        if (channel === null) {
+            return null;
+        }
+
+        return {
+            name: encodeURIComponent(channel.name + '.m3u8'),
+            playList: this.apiUtil.createM3U8PlayListStr({
+                host: host,
+                isSecure: isSecure,
+                name: channel.name,
+                duration: 0,
+                baseUrl: `/api/streams/live/${option.channelId.toString(10)}/mp4?mode=${option.mode}`,
+            }),
+        };
+    }
+
     /**
      * 指定した stream id のストリームを停止
      * @param streamId: apid.StreamId

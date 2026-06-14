@@ -158,7 +158,7 @@ export default interface IConfigFile {
 
     // 視聴 URL Scheme 設定
     urlscheme: {
-        m2ts: URLSchemeInfo;
+        live: URLSchemeInfo;
         video: URLSchemeInfo;
         download: URLSchemeInfo;
     };

@@ -52,11 +52,11 @@ export default class ConfigApiModel implements IConfigApiModel {
         });
 
         result.urlscheme = {
-            m2ts: {
-                ios: config.urlscheme.m2ts.ios,
-                android: config.urlscheme.m2ts.android,
-                mac: config.urlscheme.m2ts.mac,
-                win: config.urlscheme.m2ts.win,
+            live: {
+                ios: config.urlscheme.live.ios,
+                android: config.urlscheme.live.android,
+                mac: config.urlscheme.live.mac,
+                win: config.urlscheme.live.win,
             },
             video: {
                 ios: config.urlscheme.video.ios,

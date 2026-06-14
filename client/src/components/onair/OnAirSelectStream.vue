@@ -22,7 +22,7 @@
                             :menu-props="{ auto: true }"
                         ></v-select>
                     </div>
-                    <div class="d-flex">
+                    <div class="d-flex" v-if="dialogState.selectedStreamType !== 'M2TS-LL' && dialogState.selectedStreamType !== 'HLS'">
                         <v-switch value v-model="dialogState.useURLScheme" v-on:change="updateAllStreamConfig"></v-switch>
                         <v-list-item-title class="subtitle-1">外部アプリで開く</v-list-item-title>
                     </div>
@@ -114,9 +114,9 @@ export default class OnAirSelectStream extends Vue {
      * 視聴する
      */
     public async view(): Promise<void> {
-        if (this.dialogState.selectedStreamType === 'M2TS') {
+        if (this.dialogState.useURLScheme === true && this.dialogState.selectedStreamType !== 'M2TS-LL' && this.dialogState.selectedStreamType !== 'HLS') {
             // URL Scheme による再生
-            this.m2tsViewOnURLScheme();
+            this.streamViewOnURLScheme();
         } else if (this.dialogState.selectedStreamType === 'M2TS-LL') {
             // 再生に対応しているか?
             if (Mpegts.isSupported() === false || Mpegts.getFeatureList().mseLivePlayback === false) {
@@ -159,11 +159,11 @@ export default class OnAirSelectStream extends Vue {
     /**
      * URL Scheme による m2ts 形式の再生
      */
-    private m2tsViewOnURLScheme(): void {
-        const url = this.dialogState.getM2TSURL();
+    private streamViewOnURLScheme(): void {
+        const url = this.dialogState.getStreamURL();
 
         if (url === null) {
-            const playList = this.dialogState.getM2TPlayListURL();
+            const playList = this.dialogState.getPlayListURL();
             if (playList === null) {
                 this.snackbarState.open({
                     color: 'error',

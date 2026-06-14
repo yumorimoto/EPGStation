@@ -929,7 +929,7 @@ streamingPriority: 1
 
 | 子プロパティ名 | 種類         | 必須 | 説明                                       |
 | -------------- | ------------ | ---- | ------------------------------------------ |
-| m2ts           | 孫プロパティ | no   | m2ts 形式視聴時の URL Scheme 設定          |
+| live           | 孫プロパティ | no   | ライブ視聴時の URL Scheme 設定 (M2TS, MP4, WebM に適用)          |
 | video          | 孫プロパティ | no   | 録画ビデオ視聴時の URL Scheme 設定         |
 | download       | 孫プロパティ | no   | 録画ビデオダウンロード時の URL Scheme 設定 |
 
@@ -950,7 +950,7 @@ streamingPriority: 1
 
 ```yaml
 urlscheme:
-    m2ts:
+    live:
         ios: 'vlc-x-callback://x-callback-url/stream?url=PROTOCOL://ADDRESS"'
         android: 'intent://ADDRESS#Intent;package=org.videolan.vlc;type=video;scheme=PROTOCOL;end'
     video:
