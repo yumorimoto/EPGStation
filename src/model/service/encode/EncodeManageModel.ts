@@ -6,6 +6,8 @@ import * as apid from '../../../../api';
 import IEncodeEvent from '../../event/IEncodeEvent';
 import IConfiguration from '../../IConfiguration';
 import IExecutionManagementModel from '../../IExecutionManagementModel';
+import IStreamManageModel from '../stream/manager/IStreamManageModel';
+import IStreamEvent from '../../event/IStreamEvent';
 import ILogger from '../../ILogger';
 import ILoggerModel from '../../ILoggerModel';
 import IEncodeManageModel, { EncodeInfoItem, EncodeQueueInfo, EncodeRecordedIdIndex } from './IEncodeManageModel';
@@ -17,6 +19,8 @@ class EncodeManageModel implements IEncodeManageModel {
     private executeManagementModel: IExecutionManagementModel;
     private encoderModelProvider: EncoderModelProvider;
     private encodeEvent: IEncodeEvent;
+    private streamManageModel: IStreamManageModel;
+    private streamEvent: IStreamEvent;
     private concurrentEncodeNum: number;
     private waitQueue: IEncoderModel[] = [];
     private runningQueue: IEncoderModel[] = [];
@@ -30,12 +34,20 @@ class EncodeManageModel implements IEncodeManageModel {
         @inject('IExecutionManagementModel') executeManagementModel: IExecutionManagementModel,
         @inject('EncoderModelProvider') encoderModelProvider: EncoderModelProvider,
         @inject('IEncodeEvent') encodeEvent: IEncodeEvent,
+        @inject('IStreamManageModel') streamManageModel: IStreamManageModel,
+        @inject('IStreamEvent') streamEvent: IStreamEvent,
     ) {
         this.log = logger.getLogger();
         this.executeManagementModel = executeManagementModel;
         this.concurrentEncodeNum = configure.getConfig().concurrentEncodeNum;
         this.encoderModelProvider = encoderModelProvider;
         this.encodeEvent = encodeEvent;
+        this.streamManageModel = streamManageModel;
+        this.streamEvent = streamEvent;
+
+        this.streamEvent.setStreamStateChanged(() => {
+            this.emitNeedsCheckQueue();
+        });
 
         this.listener.on(EncodeManageModel.NEEDS_CHECK_QUEUE_EVENT, this.checkQueue.bind(this));
     }
@@ -118,6 +130,13 @@ class EncodeManageModel implements IEncodeManageModel {
             // 実行権開放
             this.executeManagementModel.unLockExecution(exeId);
 
+            return;
+        }
+
+        // ライブストリーミング中は新しいエンコードを開始しない
+        if (this.streamManageModel.getStreamInfos().length > 0) {
+            // 実行権開放
+            this.executeManagementModel.unLockExecution(exeId);
             return;
         }
 

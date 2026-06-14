@@ -4,6 +4,7 @@ import IExecutionManagementModel from '../../../IExecutionManagementModel';
 import ILogger from '../../../ILogger';
 import ILoggerModel from '../../../ILoggerModel';
 import ISocketIOManageModel from '../../socketio/ISocketIOManageModel';
+import IStreamEvent from '../../../event/IStreamEvent';
 import IStreamBaseModel, { LiveStreamInfo, RecordedStreamInfo } from '../base/IStreamBaseModel';
 import IStreamManageModel, { StreamInfoWithStreamId } from './IStreamManageModel';
 
@@ -12,16 +13,19 @@ class StreamManageModel implements IStreamManageModel {
     private log: ILogger;
     private executeManagementModel: IExecutionManagementModel;
     private socketIO: ISocketIOManageModel;
+    private streamEvent: IStreamEvent;
     private streams: { [streamId: number]: IStreamBaseModel<any> } = {};
 
     constructor(
         @inject('ILoggerModel') logger: ILoggerModel,
         @inject('IExecutionManagementModel') executeManagementModel: IExecutionManagementModel,
         @inject('ISocketIOManageModel') socketIO: ISocketIOManageModel,
+        @inject('IStreamEvent') streamEvent: IStreamEvent,
     ) {
         this.log = logger.getLogger();
         this.executeManagementModel = executeManagementModel;
         this.socketIO = socketIO;
+        this.streamEvent = streamEvent;
     }
 
     /**
@@ -56,6 +60,8 @@ class StreamManageModel implements IStreamManageModel {
             await this.stop(streamId);
             throw err;
         }
+
+        this.streamEvent.emitStreamStateChanged();
 
         // stream 停止時に停止させる
         stream.setExitStream(async () => {
@@ -114,6 +120,7 @@ class StreamManageModel implements IStreamManageModel {
 
         finalize();
         this.socketIO.notifyClient();
+        this.streamEvent.emitStreamStateChanged();
 
         this.log.stream.info(`stop stream ${streamId}`);
     }

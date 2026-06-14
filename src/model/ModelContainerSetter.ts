@@ -71,6 +71,8 @@ import EPGUpdateEvent from './event/EPGUpdateEvent';
 import EventSetter from './event/EventSetter';
 import IEncodeEvent from './event/IEncodeEvent';
 import IEPGUpdateEvent from './event/IEPGUpdateEvent';
+import IStreamEvent from './event/IStreamEvent';
+import StreamEvent from './event/StreamEvent';
 import IEventSetter from './event/IEventSetter';
 import IOperatorEncodeEvent from './event/IOperatorEncodeEvent';
 import IRecordedEvent from './event/IRecordedEvent';
@@ -214,6 +216,7 @@ export const set = (container: Container): void => {
     container.bind<IReserveEvent>('IReserveEvent').to(ReserveEvent).inSingletonScope();
 
     container.bind<IEPGUpdateEvent>('IEPGUpdateEvent').to(EPGUpdateEvent).inSingletonScope();
+    container.bind<IStreamEvent>('IStreamEvent').to(StreamEvent).inSingletonScope();
 
     container.bind<IOperatorEncodeEvent>('IOperatorEncodeEvent').to(OperatorEncodeEvent).inSingletonScope();
 
