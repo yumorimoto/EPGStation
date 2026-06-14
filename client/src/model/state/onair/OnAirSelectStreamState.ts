@@ -115,7 +115,13 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
                 this.selectedStreamType = typeof newSelectedStreamType === 'undefined' ? this.streamTypes[0] : newSelectedStreamType;
             }
         } else {
-            this.selectedStreamType = this.streamTypes[0];
+            // Keep currently selected stream type if available in new stream types
+            const currentSelected = this.selectedStreamType;
+            if (currentSelected && this.streamTypes.includes(currentSelected)) {
+                this.selectedStreamType = currentSelected;
+            } else {
+                this.selectedStreamType = this.streamTypes[0];
+            }
         }
     }
 
