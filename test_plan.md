@@ -1,2 +1,0 @@
-1. **Frontend UI Fix**: Modified `client/src/model/state/onair/OnAirSelectStreamState.ts` so that `updateStreamTypes` now checks if `this.selectedStreamType` is still present in the freshly computed `streamTypes` array. If it is, it preserves it instead of aggressively reverting to `streamTypes[0]`. This fixes the bug where toggling the "Open in External App" (useURLScheme) switch drops the selection from MP4 back to M2TS.
-2. **Build and test**: `npm run build-client` succeeds. `npm run build-server` succeeds. `npm run lint` succeeds.
