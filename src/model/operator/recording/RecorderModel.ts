@@ -478,8 +478,9 @@ class RecorderModel implements IRecorderModel {
 
             if (err) {
                 this.log.system.error(
-                    `stream.finished error: reserveId: ${this.reserve.id} recordedId: ${this.recordedId}`,
+                    `stream.finished error: stream closed unexpectedly before end. reserveId: ${this.reserve.id} recordedId: ${this.recordedId}`,
                 );
+                this.log.system.debug(err);
                 await this.recFailed(err);
             } else {
                 await this.recEnd().catch(e => {
@@ -498,7 +499,9 @@ class RecorderModel implements IRecorderModel {
      */
     private async recFailed(err: Error): Promise<void> {
         this.destroyStream();
-        this.log.system.error(`recording end error reserveId: ${this.reserve.id} recordedId: ${this.recordedId}`);
+        this.log.system.error(
+            `recording end error (failure): stream was terminated or failed to write. reserveId: ${this.reserve.id} recordedId: ${this.recordedId}`,
+        );
         this.log.system.error(err);
 
         // 録画終了処理
