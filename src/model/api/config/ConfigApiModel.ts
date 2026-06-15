@@ -47,9 +47,13 @@ export default class ConfigApiModel implements IConfigApiModel {
             return r.name;
         });
 
-        result.encode = config.encode.map(e => {
-            return e.name;
-        });
+        if (typeof config.encode !== 'undefined') {
+            result.encode = config.encode.map(e => {
+                return e.name;
+            });
+        } else {
+            result.encode = [];
+        }
 
         result.urlscheme = {
             m2ts: {
