@@ -69,9 +69,9 @@ PC からの閲覧でもモダンな UI で操作可能です
 
 ---
 
-## v1 からの移行について
+## 既存の Linux 環境からの移行について
 
-[doc/v1migrate.md](doc/v1migrate.md) を参照
+[既存の Linux 環境から Debian LXC 環境への移行について](doc/lxc-migration.md) を参照
 
 ---
 
