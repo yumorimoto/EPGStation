@@ -1,7 +1,8 @@
 [Unit]
 Description=mirakc
 # Ensures the network is up before starting the API
-After=network.target
+Wants=network-online.target
+After=network-online.target
 # Crucial for LXC: Wait until the Proxmox bind mount for /dev/dvb is fully established
 RequiresMountsFor=/dev/dvb
 
