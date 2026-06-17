@@ -7,8 +7,10 @@ After=network-online.target
 RequiresMountsFor=/dev/dvb
 
 [Service]
+ExecStartPre=/bin/sleep 5
 ExecStart=/usr/local/bin/mirakc -c /etc/mirakc/config.yml
 Restart=always
+RestartSec=5
 Type=simple
 StandardOutput=journal
 StandardError=journal
