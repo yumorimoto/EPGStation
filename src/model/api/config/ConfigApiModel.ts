@@ -83,7 +83,7 @@ export default class ConfigApiModel implements IConfigApiModel {
                     'config.urlscheme.download is not defined. Ensure your config.yml is up to date with config.yml.template',
                 );
             }
-
+            // Added optional chaining to fail gracefully if `config.urlscheme.live` does not exist
             result.urlscheme = {
                 live: {
                     ios: config.urlscheme.live?.ios,
