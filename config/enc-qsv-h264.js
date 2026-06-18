@@ -4,7 +4,7 @@ const { spawn } = require('child_process');
  * EPGStation Custom Encoding Script
  * Utilizes Intel Quick Sync Video (QSV) hardware encoding for H.264 at 1080i/p.
  * Intelligently handles Dual Mono and Multiple Audio Track broadcasts.
- *
+ * 
  * Conforms to Google JavaScript Style Guide.
  */
 
@@ -108,48 +108,58 @@ if (genre1) args.push('-metadata', `genre=${genre1}`);
 if (broadcastDate) args.push('-metadata', `date=${broadcastDate}`);
 
 
-// --- Video Filter Configuration ---
-// vpp_qsv=deinterlace=2: Uses advanced hardware deinterlacing
-// vpp_qsv=framerate=30000/1001: Sets the framerate to 29.97fps
-// vpp_qsv=rate=1: Maintains the framerate
-let videoFilter = 'vpp_qsv=deinterlace=2,vpp_qsv=framerate=30000/1001,vpp_qsv=rate=1';
+// Determine if the broadcast has a video stream. Radio broadcasts (like 放送大学ラジオ) lack video.
+// If VIDEORESOLUTION is 'null' or empty, we consider it an audio-only stream.
+const hasVideo = !isNaN(videoHeight) && videoHeight > 0;
 
-// Parse optional max resolution from command line arguments (e.g. -r 720)
-let maxResolution = NaN;
-const rIndex = process.argv.indexOf('-r');
-if (rIndex > -1 && rIndex + 1 < process.argv.length) {
-  maxResolution = parseInt(process.argv[rIndex + 1], 10);
+if (hasVideo) {
+  // --- Video Filter Configuration ---
+  // vpp_qsv=deinterlace=2: Uses advanced hardware deinterlacing
+  // vpp_qsv=framerate=30000/1001: Sets the framerate to 29.97fps
+  // vpp_qsv=rate=1: Maintains the framerate
+  let videoFilter = 'vpp_qsv=deinterlace=2,vpp_qsv=framerate=30000/1001,vpp_qsv=rate=1';
+
+  // Parse optional max resolution from command line arguments (e.g. -r 720)
+  let maxResolution = NaN;
+  const rIndex = process.argv.indexOf('-r');
+  if (rIndex > -1 && rIndex + 1 < process.argv.length) {
+    maxResolution = parseInt(process.argv[rIndex + 1], 10);
+  }
+
+  // Dynamic Resolution Scaling
+  if (!isNaN(maxResolution) && maxResolution > 0 && videoHeight > maxResolution) {
+    // If the source video is larger than the requested max resolution, scale it down.
+    // vpp_qsv hardware scaling requires w/h parameters. We scale height to maxResolution, 
+    // and set width to -1 (or more accurately w=ow/oh*h in some contexts, but -1 keeps aspect ratio)
+    // For QSV, scale_qsv=-1:maxResolution or using vpp_qsv=h=maxResolution:w=-1 is preferred.
+    // However, vpp_qsv handles it best:
+    videoFilter += `,vpp_qsv=h=${maxResolution}:w=-1`;
+  }
+
+  args.push('-vf', videoFilter);
+
+  // --- Video Encoding Settings ---
+  args.push(
+    // Video Codec
+    '-c:v', codec,
+    // Encoder Preset (e.g., fast, medium, slow)
+    '-preset', preset,
+    // Target Video Bitrate
+    '-vb', videoBitrate,
+    // Enable lookahead for better bitrate distribution
+    '-look_ahead', '1',
+    // Set the depth of the lookahead buffer to 30 frames
+    '-look_ahead_depth', '30'
+  );
+} else {
+  // If there is no video, explicitly instruct FFmpeg not to expect or map video.
+  args.push('-vn');
 }
 
-// Dynamic Resolution Scaling
-if (!isNaN(maxResolution) && maxResolution > 0 && videoHeight > maxResolution) {
-  // If the source video is larger than the requested max resolution, scale it down.
-  // vpp_qsv hardware scaling requires w/h parameters. We scale height to maxResolution,
-  // and set width to -1 (or more accurately w=ow/oh*h in some contexts, but -1 keeps aspect ratio)
-  // For QSV, scale_qsv=-1:maxResolution or using vpp_qsv=h=maxResolution:w=-1 is preferred.
-  // However, vpp_qsv handles it best:
-  videoFilter += `,vpp_qsv=h=${maxResolution}:w=-1`;
-}
-
-args.push('-vf', videoFilter);
-
-// --- Video Encoding Settings ---
-args.push(
-  // Video Codec
-  '-c:v', codec,
-  // Encoder Preset (e.g., fast, medium, slow)
-  '-preset', preset,
-  // Target Video Bitrate
-  '-vb', videoBitrate,
-  // Enable lookahead for better bitrate distribution
-  '-look_ahead', '1',
-  // Set the depth of the lookahead buffer to 30 frames
-  '-look_ahead_depth', '30'
-);
-
-// Define base stream mapping based on Service ID (Program ID) to ensure we only capture
+// Define base stream mapping based on Service ID (Program ID) to ensure we only capture 
 // the streams belonging to the specific program, ignoring remnant streams from previous/parallel programs.
-const videoMap = serviceId ? `0:p:${serviceId}:v:0` : '0:v:0';
+// The trailing '?' makes the mapping optional, preventing hard crashes if a stream is missing.
+const videoMap = serviceId ? `0:p:${serviceId}:v?` : '0:v?';
 const audioMapBase = serviceId ? `0:p:${serviceId}:a` : '0:a';
 
 // --- Audio Configuration & Mapping ---
@@ -160,9 +170,12 @@ if (isDualMono) {
   // Note: We MUST re-encode to AAC here because we are passing the audio through a filter.
   args.push(
     // Split the very first audio stream mapped by the Service ID
-    '-filter_complex', `[${audioMapBase}:0]channelsplit=channel_layout=stereo[left][right]`,
-    // Map the specific program's video stream
-    '-map', videoMap,
+    '-filter_complex', `[${audioMapBase}:0]channelsplit=channel_layout=stereo[left][right]`
+  );
+  
+  if (hasVideo) args.push('-map', videoMap);
+  
+  args.push(
     // Map the Left channel output from channelsplit as Track 1
     '-map', '[left]',
     // Map the Right channel output from channelsplit as Track 2
@@ -182,9 +195,9 @@ if (isDualMono) {
   // SCENARIO B: Multiple Audio Streams
   // The broadcast is flagged as having multiple languages/commentaries, but is NOT Dual Mono.
   // We rely on our boosted probe sizes to find all delayed physical audio streams.
+  if (hasVideo) args.push('-map', videoMap);
+  
   args.push(
-    // Map the specific program's video stream
-    '-map', videoMap,
     // Map ALL audio streams belonging to the specific program.
     // The trailing '?' ensures FFmpeg doesn't fail if no audio streams are found (though unlikely).
     '-map', `${audioMapBase}?`,
@@ -196,8 +209,9 @@ if (isDualMono) {
 } else {
   // SCENARIO C: Standard Broadcast
   // Standard single audio track. We explicitly map the specific program's video and audio.
+  if (hasVideo) args.push('-map', videoMap);
+  
   args.push(
-    '-map', videoMap,
     '-map', `${audioMapBase}:0`,
     // Copy the original audio streams without re-encoding to perfectly preserve quality/surround sound
     '-c:a', 'copy'
@@ -221,7 +235,7 @@ const child = spawn(ffmpeg, args);
 // --- Progress Tracking ---
 // EPGStation listens to process.stdout for JSON objects indicating progress.
 // We parse the frame count from stderr and calculate the percentage based on the video duration.
-// Assuming 29.97 FPS (which we forced in the video filter):
+// Assuming 29.97 FPS (which we forced in the video filter): 
 const FPS = 29.97;
 const totalFrames = (durationMs / 1000) * FPS;
 
@@ -230,22 +244,22 @@ const fs = require('fs');
 child.stderr.on('data', (data) => {
   const logStr = String(data);
   console.error(logStr); // Still write to stderr for debugging
-
+  
   // Split the data chunk by lines, as ffmpeg may output multiple lines in a single event
   const lines = logStr.split('\n');
-
+  
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (line.trim() === '') continue;
 
-    // EPGStation tracks progress using a JSON output to stdout.
+    // EPGStation tracks progress using a JSON output to stdout. 
     // We look for 'frame=  XXX' in the ffmpeg stderr output.
     const frameMatch = line.match(/frame=\s*(\d+)/);
     if (frameMatch && totalFrames > 0) {
       const currentFrame = parseInt(frameMatch[1], 10);
       let percent = currentFrame / totalFrames;
       if (percent > 1) percent = 1;
-
+      
       // EPGStation's EncoderModel specifically looks for this JSON format on stdout
       const progressLog = JSON.stringify({
         type: 'progress',
@@ -253,7 +267,7 @@ child.stderr.on('data', (data) => {
         log: line.trim()
       });
       console.log(progressLog);
-
+      
       // Optional: Write the generated JSON to a debug file to verify what we're sending
       try {
         fs.appendFileSync('/tmp/enc-qsv-h264-progress-debug.log', progressLog + '\n');

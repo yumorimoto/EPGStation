@@ -9,6 +9,11 @@ interface History {
     data: any | null;
 }
 
+interface StorageData {
+    history: History[];
+    position: number;
+}
+
 @injectable()
 class ScrollPositionState implements IScrollPositionState {
     /**
@@ -39,13 +44,14 @@ class ScrollPositionState implements IScrollPositionState {
      * sessionStorage に history を保存
      */
     private saveStorage(): void {
-        window.sessionStorage.setItem(
-            ScrollPositionState.STORAGE_KEY,
-            JSON.stringify({
-                history: this.history,
-                curentPosition: this.currentPosition,
-            }),
-        );
+        if (this.history === null) return;
+
+        const data: StorageData = {
+            history: this.history,
+            position: this.currentPosition,
+        };
+
+        window.sessionStorage.setItem(ScrollPositionState.STORAGE_KEY, JSON.stringify(data));
     }
 
     /**
@@ -113,7 +119,7 @@ class ScrollPositionState implements IScrollPositionState {
             return;
         }
 
-        const data = JSON.parse(str) as any;
+        const data = JSON.parse(str) as StorageData;
         this.history = data.history;
         this.currentPosition = data.position;
     }
