@@ -61,7 +61,7 @@
                                         <v-list-item-title class="subtitle-1">web での再生を優先する</v-list-item-title>
                                     </div>
                                     <v-spacer></v-spacer>
-                                    <v-switch v-model="storageModel.tmp.isPreferredPlayingLiveM2TSOnWeb" value></v-switch>
+                                    <v-switch v-model="storageModel.tmp.isPreferredPlayingLiveOnWeb" value></v-switch>
                                 </div>
                                 <div class="my-2 d-flex flex-column">
                                     <div class="d-flex">
@@ -70,7 +70,7 @@
                                         </div>
                                         <v-spacer></v-spacer>
                                     </div>
-                                    <v-text-field v-model="storageModel.tmp.onAirM2TSViewURLScheme" label="URL" clearable></v-text-field>
+                                    <v-text-field v-model="storageModel.tmp.onAirLiveViewURLScheme" label="URL" clearable></v-text-field>
                                 </div>
                             </v-list-item-content>
                         </v-list-item>

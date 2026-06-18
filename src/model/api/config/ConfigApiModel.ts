@@ -2,6 +2,8 @@ import { inject, injectable } from 'inversify';
 import * as apid from '../../../../api';
 import IConfiguration from '../../IConfiguration';
 import IIPCClient from '../../ipc/IIPCClient';
+import ILogger from '../../ILogger';
+import ILoggerModel from '../../ILoggerModel';
 import IConfigApiModel from './IConfigApiModel';
 
 @injectable()
@@ -9,8 +11,15 @@ export default class ConfigApiModel implements IConfigApiModel {
     private configuration: IConfiguration;
     private ipc: IIPCClient;
 
-    constructor(@inject('IConfiguration') configuration: IConfiguration, @inject('IIPCClient') ipc: IIPCClient) {
+    private log: ILogger;
+
+    constructor(
+        @inject('IConfiguration') configuration: IConfiguration,
+        @inject('ILoggerModel') logger: ILoggerModel,
+        @inject('IIPCClient') ipc: IIPCClient,
+    ) {
         this.configuration = configuration;
+        this.log = logger.getLogger();
         this.ipc = ipc;
     }
 
@@ -47,30 +56,55 @@ export default class ConfigApiModel implements IConfigApiModel {
             return r.name;
         });
 
-        result.encode = config.encode.map(e => {
-            return e.name;
-        });
+        result.encode =
+            typeof config.encode === 'undefined'
+                ? []
+                : config.encode.map(e => {
+                      return e.name;
+                  });
 
-        result.urlscheme = {
-            live: {
-                ios: config.urlscheme.live.ios,
-                android: config.urlscheme.live.android,
-                mac: config.urlscheme.live.mac,
-                win: config.urlscheme.live.win,
-            },
-            video: {
-                ios: config.urlscheme.video.ios,
-                android: config.urlscheme.video.android,
-                mac: config.urlscheme.video.mac,
-                win: config.urlscheme.video.win,
-            },
-            download: {
-                ios: config.urlscheme.download.ios,
-                android: config.urlscheme.download.android,
-                mac: config.urlscheme.download.mac,
-                win: config.urlscheme.download.win,
-            },
-        };
+        if (typeof config.urlscheme === 'undefined') {
+            this.log.system.error(
+                'config.urlscheme is not defined. Ensure your config.yml is up to date with config.yml.template',
+            );
+        } else {
+            if (typeof config.urlscheme.live === 'undefined') {
+                this.log.system.error(
+                    'config.urlscheme.live is not defined. Ensure your config.yml is up to date with config.yml.template',
+                );
+            }
+            if (typeof config.urlscheme.video === 'undefined') {
+                this.log.system.error(
+                    'config.urlscheme.video is not defined. Ensure your config.yml is up to date with config.yml.template',
+                );
+            }
+            if (typeof config.urlscheme.download === 'undefined') {
+                this.log.system.error(
+                    'config.urlscheme.download is not defined. Ensure your config.yml is up to date with config.yml.template',
+                );
+            }
+            // Added optional chaining to fail gracefully if `config.urlscheme.live` does not exist
+            result.urlscheme = {
+                live: {
+                    ios: config.urlscheme.live?.ios,
+                    android: config.urlscheme.live?.android,
+                    mac: config.urlscheme.live?.mac,
+                    win: config.urlscheme.live?.win,
+                },
+                video: {
+                    ios: config.urlscheme.video?.ios,
+                    android: config.urlscheme.video?.android,
+                    mac: config.urlscheme.video?.mac,
+                    win: config.urlscheme.video?.win,
+                },
+                download: {
+                    ios: config.urlscheme.download?.ios,
+                    android: config.urlscheme.download?.android,
+                    mac: config.urlscheme.download?.mac,
+                    win: config.urlscheme.download?.win,
+                },
+            };
+        }
 
         result.broadcast = await this.ipc.reserveation.getBroadcastStatus();
         result.isEnableTSLiveStream = false;
