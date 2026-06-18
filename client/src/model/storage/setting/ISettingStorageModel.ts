@@ -8,8 +8,8 @@ export interface ISettingValue {
     isForceDarkTheme: boolean;
     isHalfWidthDisplayed: boolean;
     isOnAirTabListView: boolean;
-    isPreferredPlayingLiveM2TSOnWeb: boolean;
-    onAirM2TSViewURLScheme: string | null;
+    isPreferredPlayingLiveOnWeb: boolean;
+    onAirLiveViewURLScheme: string | null;
     guideMode: GuideViewMode;
     guideLength: number;
     isForceDisableDarkThemeForGuide: boolean;

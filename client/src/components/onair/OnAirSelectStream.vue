@@ -157,7 +157,7 @@ export default class OnAirSelectStream extends Vue {
     }
 
     /**
-     * URL Scheme による m2ts 形式の再生
+     * URL Scheme による Live 形式の再生
      */
     private streamViewOnURLScheme(): void {
         const url = this.dialogState.getStreamURL();
