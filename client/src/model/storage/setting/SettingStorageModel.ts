@@ -15,6 +15,7 @@ export default class SettingStorageModel extends AbstractStorageBaseModel<ISetti
             isEnablePWA: true,
             shouldUseOSColorTheme: true,
             isForceDarkTheme: false,
+            isShowClock: false,
             isHalfWidthDisplayed: true,
             isOnAirTabListView: true,
             isPreferredPlayingLiveM2TSOnWeb: true,

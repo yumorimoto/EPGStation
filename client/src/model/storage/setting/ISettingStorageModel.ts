@@ -6,6 +6,7 @@ export interface ISettingValue {
     isEnablePWA: boolean;
     shouldUseOSColorTheme: boolean;
     isForceDarkTheme: boolean;
+    isShowClock: boolean;
     isHalfWidthDisplayed: boolean;
     isOnAirTabListView: boolean;
     isPreferredPlayingLiveM2TSOnWeb: boolean;
