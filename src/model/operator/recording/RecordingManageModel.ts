@@ -70,14 +70,21 @@ class RecordingManageModel implements IRecordingManageModel {
 
             const recordeds = await this.recordedDB.findReserveId(reserve.id);
 
-            if (recordeds.length < 3) {
+            if (recordeds.length < 30) {
                 // 録画を再設定
                 const recorder = await this.provider();
+                // If the stream dropped but the reservation isn't formally "over" yet according to setTimer (which checks endAt)
+                // it will set the timer and try again.
+                // Note: setTimer fails if now >= reserve.endAt.
                 if (recorder.setTimer(reserve, false) === true) {
-                    this.log.system.info(`readd recording: ${reserve.id}`);
+                    this.log.system.info(`readd recording: ${reserve.id} (retry ${recordeds.length})`);
                     this.recordingIndex[reserve.id] = recorder;
                 } else {
                     this.log.system.error(`readd recording error: ${reserve.id}`);
+                    // If setTimer failed, it means the endAt has passed or it was skipped. Do not retry further.
+                    this.log.system.error(
+                        `recording retry aborted because end time has passed or reservation is skipped: ${reserve.id}`,
+                    );
                 }
             } else {
                 // リトライ回数オーバー

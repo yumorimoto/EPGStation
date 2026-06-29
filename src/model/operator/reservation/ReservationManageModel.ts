@@ -10,6 +10,8 @@ import Util from '../../../util/Util';
 import IChannelDB from '../../db/IChannelDB';
 import IProgramDB, { ProgramWithOverlap } from '../../db/IProgramDB';
 import IReserveDB, { IFindTimeRangesOption, IReserveTimeOption } from '../../db/IReserveDB';
+import IReserveHistoryDB from '../../db/IReserveHistoryDB';
+import IRecordedDB from '../../db/IRecordedDB';
 import IRuleDB, { RuleWithCnt } from '../../db/IRuleDB';
 import IReserveEvent, { IReserveUpdateValues } from '../../event/IReserveEvent';
 import IConfigFile from '../../IConfigFile';
@@ -33,6 +35,8 @@ class ReservationManageModel implements IReservationManageModel {
     private executeManagementModel: IExecutionManagementModel;
     private optionChecker: IReserveOptionChecker;
     private reserveDB: IReserveDB;
+    private reserveHistoryDB: IReserveHistoryDB;
+    private recordedDB: IRecordedDB;
     private channelDB: IChannelDB;
     private programDB: IProgramDB;
     private ruleDB: IRuleDB;
@@ -51,6 +55,8 @@ class ReservationManageModel implements IReservationManageModel {
         @inject('IExecutionManagementModel') executeManagementModel: IExecutionManagementModel,
         @inject('IReserveOptionChecker') optionChecker: IReserveOptionChecker,
         @inject('IReserveDB') reserveDB: IReserveDB,
+        @inject('IReserveHistoryDB') reserveHistoryDB: IReserveHistoryDB,
+        @inject('IRecordedDB') recordedDB: IRecordedDB,
         @inject('IChannelDB') channelDB: IChannelDB,
         @inject('IProgramDB') programDB: IProgramDB,
         @inject('IRuleDB') ruleDB: IRuleDB,
@@ -61,6 +67,8 @@ class ReservationManageModel implements IReservationManageModel {
         this.executeManagementModel = executeManagementModel;
         this.optionChecker = optionChecker;
         this.reserveDB = reserveDB;
+        this.reserveHistoryDB = reserveHistoryDB;
+        this.recordedDB = recordedDB;
         this.channelDB = channelDB;
         this.programDB = programDB;
         this.ruleDB = ruleDB;
@@ -1500,6 +1508,48 @@ class ReservationManageModel implements IReservationManageModel {
             this.log.system.error('get delete old reservation error');
             throw err;
         });
+
+        if (deleteReserves.length > 0) {
+            // 履歴に保存
+            await this.reserveHistoryDB.insertMany(deleteReserves as any).catch(err => {
+                this.log.system.error('insert old reservation to history error');
+                this.log.system.error(err);
+            });
+
+            // 録画と予約の比較チェック
+            for (const reserve of deleteReserves) {
+                if (reserve.isSkip || reserve.isOverlap) continue;
+
+                // recordedDBから検索
+                try {
+                    const recordeds = await this.recordedDB.findReserveId(reserve.id);
+                    if (recordeds.length === 0) {
+                        this.log.system.error(
+                            `Recording Verification Failed: No recording found for reserveId: ${reserve.id}, name: ${reserve.name}`,
+                        );
+                    } else {
+                        // 複数ある場合は最も録画時間が長いものを正とする
+                        let maxDuration = 0;
+                        for (const r of recordeds) {
+                            if (r.duration > maxDuration) {
+                                maxDuration = r.duration;
+                            }
+                        }
+
+                        const expectedDuration = reserve.endAt - reserve.startAt;
+                        // 90秒以上短い場合はエラーとして扱う
+                        if (expectedDuration - maxDuration > 90 * 1000) {
+                            this.log.system.error(
+                                `Recording is significantly shorter than expected. ID: ${reserve.id}`,
+                            );
+                        }
+                    }
+                } catch (e) {
+                    this.log.system.error(`Failed to verify recording for reserveId: ${reserve.id}`);
+                    this.log.system.error(e);
+                }
+            }
+        }
 
         // 削除
         await this.reserveDB

@@ -37,7 +37,7 @@ class ExecutionManagementModel implements IExecutionManagementModel {
         return 'UnknownCaller';
     }
 
-    public getExecution(priority: number, timeout: number = 1000 * 60): Promise<ExecutionId> {
+    public getExecution(priority: number, timeout: number = 1000 * 60 * 5): Promise<ExecutionId> {
         const exeQueueData: ExeQueueData = {
             id: new Date().getTime().toString(16) + Math.floor(1000 * Math.random()).toString(16),
             priority: priority,

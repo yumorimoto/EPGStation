@@ -6,7 +6,7 @@ import * as apid from '../../../../api';
 import FileUtil from '../../../util/FileUtil';
 import ProcessUtil from '../../../util/ProcessUtil';
 import Util from '../../../util/Util';
-import IVideoUtil from '../../api/video/IVideoUtil';
+import IVideoUtil, { VideoInfo } from '../../api/video/IVideoUtil';
 import IChannelDB from '../../db/IChannelDB';
 import IRecordedDB from '../../db/IRecordedDB';
 import IVideoFileDB from '../../db/IVideoFileDB';
@@ -256,14 +256,23 @@ class EncoderModel implements IEncoderModel {
 
         // 進捗情報更新用
         if (this.childProcess.stdout !== null) {
-            // エンコードプロセスの標準出力から進捗情報を取り出す
-            this.childProcess.stdout.on('data', data => {
-                try {
-                    this.updateEncodingProgressInfo(data);
-                } catch (err: any) {
-                    // error
-                }
-            });
+            let videoInfo: VideoInfo | null = null;
+            try {
+                videoInfo = await this.videoUtil.getInfo(inputFilePath);
+            } catch (err: any) {
+                this.log.encode.error(`get encode vidoe file info: ${inputFilePath}`);
+                this.log.encode.error(err);
+            }
+            if (videoInfo !== null) {
+                // エンコードプロセスの標準出力から進捗情報を取り出す
+                this.childProcess.stdout.on('data', data => {
+                    try {
+                        this.updateEncodingProgressInfo(data);
+                    } catch (err: any) {
+                        // error
+                    }
+                });
+            }
         }
 
         // プロセス終了処理

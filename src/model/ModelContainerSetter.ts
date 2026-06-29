@@ -48,6 +48,8 @@ import IProgramDB from './db/IProgramDB';
 import IRecordedDB from './db/IRecordedDB';
 import IRecordedHistoryDB from './db/IRecordedHistoryDB';
 import IRecordedTagDB from './db/IRecordedTagDB';
+import IReserveHistoryDB from './db/IReserveHistoryDB';
+import ReserveHistoryDB from './db/ReserveHistoryDB';
 import IReserveDB from './db/IReserveDB';
 import IRuleDB from './db/IRuleDB';
 import IThumbnailDB from './db/IThumbnailDB';
@@ -193,6 +195,7 @@ export const set = (container: Container): void => {
 
     container.bind<IRecordedHistoryDB>('IRecordedHistoryDB').to(RecordedHistoryDB).inSingletonScope();
 
+    container.bind<IReserveHistoryDB>('IReserveHistoryDB').to(ReserveHistoryDB).inSingletonScope();
     container.bind<IReserveDB>('IReserveDB').to(ReserveDB).inSingletonScope();
 
     container.bind<IRuleDB>('IRuleDB').to(RuleDB).inRequestScope();

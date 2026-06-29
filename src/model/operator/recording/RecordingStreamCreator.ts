@@ -245,7 +245,15 @@ export default class RecordingStreamCreator implements IRecordingStreamCreator {
             return this.getTimeSpecifiedStream(reserve, mirakurun, abortSignal);
         } else {
             // programId 指定予約
-            return mirakurun.getProgramStream({ id: reserve.programId, decode: true, signal: abortSignal });
+            return mirakurun
+                .getProgramStream({ id: reserve.programId, decode: true, signal: abortSignal })
+                .catch(err => {
+                    this.log.system.error(
+                        `getProgramStream failed for programId ${reserve.programId}, falling back to service stream for channelId ${reserve.channelId}`,
+                    );
+                    this.log.system.error(err);
+                    return this.getTimeSpecifiedStream(reserve, mirakurun, abortSignal);
+                });
         }
     }
 
