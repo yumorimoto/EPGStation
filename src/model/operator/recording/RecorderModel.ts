@@ -830,10 +830,10 @@ class RecorderModel implements IRecorderModel {
         if (newReserve.isSkip === true || newReserve.isOverlap === true) {
             // skip されたかチェック
             this.log.system.info(
-                `cancel recording by skip or overlap reserveId: ${this.reserve.id}, recordedId: ${this.recordedId}`,
+                `cancel recording by skip or overlap reserveId: ${this.reserve.id}, ${this.reserve.halfWidthName}, recordedId: ${this.recordedId}`,
             );
             await this.cancel(false).catch(err => {
-                this.log.system.error(`cancel recording error: ${newReserve.id}`);
+                this.log.system.error(`cancel recording error: ${newReserve.id} ${this.reserve.halfWidthName}`);
                 this.log.system.error(err);
             });
         } else if (this.reserve.startAt !== newReserve.startAt || this.reserve.endAt !== newReserve.endAt) {
