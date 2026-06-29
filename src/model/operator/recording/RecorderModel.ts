@@ -124,6 +124,8 @@ class RecorderModel implements IRecorderModel {
         // 待機時間を計算
         let time = this.reserve.startAt - now - IRecordingStreamCreator.PREP_TIME;
         if (time < 0) {
+            // We are already past the start time (likely a reconnection attempt after a drop).
+            // Do not delay, fire the prep/recording cycle immediately.
             time = 0;
         }
 
@@ -481,6 +483,10 @@ class RecorderModel implements IRecorderModel {
                     `stream.finished error: stream closed unexpectedly before end. reserveId: ${this.reserve.id} recordedId: ${this.recordedId}`,
                 );
                 this.log.system.debug(err);
+
+                // Instead of completely failing out, attempt to reconnect by triggering recFailed which will signal the Retry mechanism.
+                // We'll throw an error with a specific message that the retry handler in RecordingManageModel can intercept.
+                err.message = 'ERR_STREAM_PREMATURE_CLOSE';
                 await this.recFailed(err);
             } else {
                 await this.recEnd().catch(e => {
@@ -830,10 +836,10 @@ class RecorderModel implements IRecorderModel {
         if (newReserve.isSkip === true || newReserve.isOverlap === true) {
             // skip されたかチェック
             this.log.system.info(
-                `cancel recording by skip or overlap reserveId: ${this.reserve.id}, ${this.reserve.halfWidthName}, recordedId: ${this.recordedId}`,
+                `cancel recording by skip or overlap reserveId: ${this.reserve.id}, recordedId: ${this.recordedId}`,
             );
             await this.cancel(false).catch(err => {
-                this.log.system.error(`cancel recording error: ${newReserve.id} ${this.reserve.halfWidthName}`);
+                this.log.system.error(`cancel recording error: ${newReserve.id}`);
                 this.log.system.error(err);
             });
         } else if (this.reserve.startAt !== newReserve.startAt || this.reserve.endAt !== newReserve.endAt) {

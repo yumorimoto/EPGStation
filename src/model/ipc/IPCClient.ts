@@ -141,16 +141,13 @@ export default class IPCClient implements IIPCClient {
                 });
             },
             add: (option: apid.ManualReserveOption) => {
-                return this.send<apid.ReserveId>(
-                    {
-                        model: ModelName.reserveation,
-                        func: ReserveationFunctions.add,
-                        args: {
-                            option: option,
-                        },
+                return this.send<apid.ReserveId>({
+                    model: ModelName.reserveation,
+                    func: ReserveationFunctions.add,
+                    args: {
+                        option: option,
                     },
-                    15000,
-                ); // 15 seconds timeout to allow DB operations to catch up
+                });
             },
             update: (reserveId: apid.ReserveId) => {
                 return this.send({

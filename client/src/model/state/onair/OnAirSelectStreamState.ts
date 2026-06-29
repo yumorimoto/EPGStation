@@ -177,7 +177,7 @@ export default class OnAirSelectStreamState implements IOnAirSelectStreamState {
 
         const config = this.serverConfig.getConfig();
         let urlScheme: string | null = null;
-        const settingURLScheme = this.settingModel.getSavedValue().onAirLiveViewURLScheme;
+        const settingURLScheme = this.settingModel.getSavedValue().onAirM2TSViewURLScheme;
 
         if (settingURLScheme !== null && settingURLScheme.length > 0) {
             urlScheme = settingURLScheme;
