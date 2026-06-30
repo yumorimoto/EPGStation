@@ -32,6 +32,6 @@ export default interface IStreamBaseModel<T> {
     stop(): Promise<void>;
     getStream(): internal.Readable;
     getInfo(): LiveStreamInfo | RecordedStreamInfo;
-    setExitStream(callback: () => void): void;
+    setExitStream(callback: (isError?: boolean) => void): void;
     keep(): void;
 }
