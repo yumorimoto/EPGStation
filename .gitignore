@@ -11,8 +11,11 @@ data/streamfiles/*
 config/*
 !config/*.template
 !config/*.sample.yml
+!config/enc-qsv-h264.js
 data/*.json
 data/upload/*
+data/*.db-shm
+data/*.db-wal
 drop/*.log
 node_modules
 dist
