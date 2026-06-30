@@ -13,6 +13,8 @@ config/*
 !config/*.sample.yml
 !config/enc-qsv-h264.js
 data/*.json
+data/*.db-shm
+data/*.db-wal
 data/upload/*
 data/*.db-shm
 data/*.db-wal
