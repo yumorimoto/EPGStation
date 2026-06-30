@@ -51,7 +51,11 @@ While the above changes significantly improve backend reliability, the following
 
 ## 5. Transition to Service-Based Streams for Ultimate Reliability (In Progress)
 
+<<<<<<< HEAD
 Analysis of `mirakc` logs revealed that using `getProgramStream` (which utilizes the backend's `filter-program` based on EIT data) delegates stream termination to the tuner backend. If the tuner backend detects an EIT change or simply drops the stream, it sends a clean EOF to EPGStation.
+=======
+Analysis of `mirakc` logs revealed that using `getProgramStream` (which utilizes the backend's `filter-program` based on EIT data) delegates stream termination to the tuner backend. If the tuner backend detects an EIT change or simply drops the stream, it sends a clean EOF to EPGStation. 
+>>>>>>> 8abd8872 (Implement logic to detect when a live stream ends prematurely (e.g., encountering EOF without user cancellation).)
 
 For example, the following `mirakc` logs show a stream ending cleanly from the backend's perspective, causing EPGStation to receive an EOF without any socket error:
 ```
