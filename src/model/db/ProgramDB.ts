@@ -326,14 +326,9 @@ export default class ProgramDB implements IProgramDB {
             }
 
             // 挿入処理
-            for (const value of insertValues) {
-                await queryRunner.manager.insert(Program, value).catch(async err => {
-                    await queryRunner.manager.update(Program, value.id, value).catch(serr => {
-                        this.log.system.error('program update error');
-                        this.log.system.error(err);
-                        this.log.system.error(serr);
-                    });
-                });
+            const chunkSize = 500;
+            for (let i = 0; i < insertValues.length; i += chunkSize) {
+                await queryRunner.manager.save(Program, insertValues.slice(i, i + chunkSize) as any);
             }
 
             await queryRunner.commitTransaction();

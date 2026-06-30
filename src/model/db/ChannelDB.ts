@@ -14,6 +14,7 @@ import IDBOperator from './IDBOperator';
 
 @injectable()
 export default class ChannelDB implements IChannelDB {
+    // @ts-expect-error: unused variable required by class but currently unused in optimized implementation
     private log: ILogger;
     private configuration: IConfiguration;
     private op: IDBOperator;
@@ -76,14 +77,9 @@ export default class ChannelDB implements IChannelDB {
             }
 
             // 挿入処理
-            for (const value of values) {
-                await queryRunner.manager.insert(Channel, value).catch(async err => {
-                    await queryRunner.manager.update(Channel, value.id, value).catch(serr => {
-                        this.log.system.error('channel update error');
-                        this.log.system.error(err);
-                        this.log.system.error(serr);
-                    });
-                });
+            const chunkSize = 500;
+            for (let i = 0; i < values.length; i += chunkSize) {
+                await queryRunner.manager.save(Channel, values.slice(i, i + chunkSize) as any);
             }
 
             await queryRunner.commitTransaction();

@@ -4,6 +4,7 @@
     "description": "DTV Software in Japan.",
     "main": "dist/index.js",
     "scripts": {
+    "benchmark": "ts-node --project tsconfig.json src/test/scripts/benchmark-inserts.ts",
         "all-install": "npm i --no-save && cd client && npm i --no-save",
         "start": "node dist/index.js",
         "build": "npm run build-server && npm run build-client",
