@@ -64,7 +64,12 @@ class StreamManageModel implements IStreamManageModel {
         this.streamEvent.emitStreamStateChanged();
 
         // stream 停止時に停止させる
-        stream.setExitStream(async () => {
+        stream.setExitStream(async isError => {
+            if (isError === true) {
+                this.log.stream.error(`stream exited unexpectedly: ${streamId}`);
+                // Future: We can implement automatic retry here by restarting the stream.
+                // For now we just log it as an error to track premature drop events.
+            }
             finalize();
             await this.stop(streamId).catch();
         });

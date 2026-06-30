@@ -28,6 +28,7 @@ abstract class StreamBaseModel<T> implements IStreamBaseModel<T> {
     private isEnableStream: boolean = false;
     private streamCheckTimer: NodeJS.Timeout | null = null;
     private streamStopTimer: NodeJS.Timeout | null = null;
+    protected isManualStop: boolean = false;
 
     constructor(
         @inject('IConfiguration') configure: IConfiguration,
@@ -97,6 +98,7 @@ abstract class StreamBaseModel<T> implements IStreamBaseModel<T> {
      * @return Promise<void>
      */
     public async stop(): Promise<void> {
+        this.isManualStop = true;
         if (this.streamCheckTimer !== null) {
             clearInterval(this.streamCheckTimer);
             this.streamCheckTimer = null;
@@ -118,10 +120,10 @@ abstract class StreamBaseModel<T> implements IStreamBaseModel<T> {
      * ストリーム終了イベントへ登録
      * @param callback: () => void
      */
-    public setExitStream(callback: () => void): void {
+    public setExitStream(callback: (isError?: boolean) => void): void {
         this.emitter.once(StreamBaseModel.EXIT_EVENT, async () => {
             try {
-                callback();
+                callback(!this.isManualStop);
             } catch (err: any) {
                 this.log.stream.error('exit stream callback error');
                 this.log.stream.error(err);
