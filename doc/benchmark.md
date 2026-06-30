@@ -53,3 +53,15 @@ Results:
    `npm run benchmark`
 
 Note: The benchmark code resides in `src/test/scripts/benchmark-inserts.ts` and runs using `ts-node` configured via `tsconfig.test.json` (or similar), so it does not interfere with the production `dist/` compilation build.
+
+## Summary of Database Optimizations
+
+To implement these optimizations, the following files and methods were updated:
+
+- **`src/model/db/VideoFileDB.ts`**: Optimized `restore()` function to replace single N+1 insertions loop with chunked bulk insertions.
+- **`src/model/db/RuleDB.ts`**: Optimized `restore()` function to replace single N+1 insertions loop with chunked bulk insertions.
+- **`src/model/db/ThumbnailDB.ts`**: Optimized `restore()` function to replace single N+1 insertions loop with chunked bulk insertions.
+- **`src/model/db/DropLogFileDB.ts`**: Optimized `restore()` function to replace single N+1 insertions loop with chunked bulk insertions.
+- **`src/model/db/RecordedDB.ts`**: Optimized `restore()` function to replace single N+1 insertions loop with chunked bulk insertions.
+- **`src/model/db/ChannelDB.ts`**: Optimized `insert()` function to replace N+1 `insert().catch(update())` patterns with a bulk chunked `save()` operation.
+- **`src/model/db/ProgramDB.ts`**: Optimized `insert()` function to replace N+1 `insert().catch(update())` patterns with a bulk chunked `save()` operation.
