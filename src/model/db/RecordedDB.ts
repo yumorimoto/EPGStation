@@ -49,8 +49,9 @@ export default class RecordedDB implements IRecordedDB {
             await queryRunner.manager.delete(Recorded, {});
 
             // 挿入処理
-            for (const item of items) {
-                await queryRunner.manager.insert(Recorded, item);
+            const chunkSize = 500;
+            for (let i = 0; i < items.length; i += chunkSize) {
+                await queryRunner.manager.insert(Recorded, items.slice(i, i + chunkSize));
             }
             await queryRunner.commitTransaction();
         } catch (err: any) {

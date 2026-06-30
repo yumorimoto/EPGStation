@@ -34,8 +34,9 @@ export default class ThumbnailDB implements IThumbnailDB {
             await queryRunner.manager.delete(Thumbnail, {});
 
             // 挿入処理
-            for (const item of items) {
-                await queryRunner.manager.insert(Thumbnail, item);
+            const chunkSize = 500;
+            for (let i = 0; i < items.length; i += chunkSize) {
+                await queryRunner.manager.insert(Thumbnail, items.slice(i, i + chunkSize));
             }
             await queryRunner.commitTransaction();
         } catch (err: any) {

@@ -36,8 +36,10 @@ export default class RuleDB implements IRuleDB {
             await queryRunner.manager.delete(Rule, {});
 
             // 挿入処理
-            for (const item of items) {
-                await queryRunner.manager.insert(Rule, this.convertRuleToDBRule(item));
+            const chunkSize = 500;
+            for (let i = 0; i < items.length; i += chunkSize) {
+                const chunk = items.slice(i, i + chunkSize).map(item => this.convertRuleToDBRule(item));
+                await queryRunner.manager.insert(Rule, chunk);
             }
             await queryRunner.commitTransaction();
         } catch (err: any) {

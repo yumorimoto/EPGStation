@@ -34,8 +34,9 @@ export default class VideoFileDB implements IVideoFileDB {
             await queryRunner.manager.delete(VideoFile, {});
 
             // 挿入処理
-            for (const item of items) {
-                await queryRunner.manager.insert(VideoFile, item);
+            const chunkSize = 500;
+            for (let i = 0; i < items.length; i += chunkSize) {
+                await queryRunner.manager.insert(VideoFile, items.slice(i, i + chunkSize));
             }
             await queryRunner.commitTransaction();
         } catch (err: any) {
