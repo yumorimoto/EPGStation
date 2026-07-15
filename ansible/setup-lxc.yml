@@ -1,0 +1,223 @@
+---
+- name: Setup EPGStation and mirakc on Debian LXC
+  hosts: all
+  become: yes
+  vars:
+    epgstation_dir: /opt/epgstation
+    mirakc_version: "3.2.3"
+    node_version: "18"
+    sqlite_version: "3460100"
+    sqlite_year: "2024"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install system dependencies
+      apt:
+        name:
+          - curl
+          - git
+          - ffmpeg
+          - python3
+          - build-essential
+          - unzip
+          - jq
+          - libsqlite3-dev
+          - rsync
+          - cmake
+          - ninja-build
+          - g++
+          - autoconf
+          - pkg-config
+          - libtool
+        state: present
+
+    - name: Install Node.js
+      shell: |
+        curl -fsSL https://deb.nodesource.com/setup_{{ node_version }}.x | bash -
+        apt-get install -y nodejs
+      args:
+        creates: /usr/bin/node
+
+    - name: Install Rust
+      shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      args:
+        creates: /root/.cargo/bin/rustc
+
+    - name: Clone mirakc-arib repository
+      git:
+        repo: https://github.com/mirakc/mirakc-arib
+        dest: /root/mirakc-arib
+        recursive: yes
+        update: yes
+
+    - name: Configure mirakc-arib with CMake
+      command: cmake -S . -B build -G Ninja -D CMAKE_BUILD_TYPE=Release
+      args:
+        chdir: /root/mirakc-arib
+        creates: /root/mirakc-arib/build/build.ninja
+
+    - name: Build mirakc-arib vendor dependencies
+      command: ninja -C build vendor
+      args:
+        chdir: /root/mirakc-arib
+
+    - name: Build mirakc-arib
+      command: ninja -C build
+      args:
+        chdir: /root/mirakc-arib
+        creates: /root/mirakc-arib/build/bin/mirakc-arib
+
+    - name: Install mirakc-arib binary
+      copy:
+        src: /root/mirakc-arib/build/bin/mirakc-arib
+        dest: /usr/local/bin/mirakc-arib
+        remote_src: yes
+        mode: '0755'
+
+    - name: Clone mirakc repository
+      git:
+        repo: https://github.com/mirakc/mirakc
+        dest: /root/mirakc
+        update: yes
+
+    - name: Build mirakc
+      shell: source /root/.cargo/env && cargo build --release
+      args:
+        executable: /bin/bash
+        chdir: /root/mirakc
+        creates: /root/mirakc/target/release/mirakc
+
+    - name: Install mirakc binary
+      copy:
+        src: /root/mirakc/target/release/mirakc
+        dest: /usr/local/bin/mirakc
+        remote_src: yes
+        mode: '0755'
+
+    - name: Create mirakc config directory
+      file:
+        path: /etc/mirakc
+        state: directory
+
+    - name: Deploy mirakc stub config
+      template:
+        src: templates/mirakc_config.yml.j2
+        dest: /etc/mirakc/config.yml
+
+    - name: Deploy mirakc systemd service
+      template:
+        src: templates/mirakc.service.j2
+        dest: /etc/systemd/system/mirakc.service
+
+    - name: Enable and start mirakc
+      systemd:
+        name: mirakc
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+    - name: Download SQLite amalgamation for regexp compilation
+      get_url:
+        url: "https://www.sqlite.org/{{ sqlite_year }}/sqlite-amalgamation-{{ sqlite_version }}.zip"
+        dest: "/tmp/sqlite-amalgamation.zip"
+
+    - name: Download SQLite source for regexp.c
+      get_url:
+        url: "https://www.sqlite.org/{{ sqlite_year }}/sqlite-src-{{ sqlite_version }}.zip"
+        dest: "/tmp/sqlite-src.zip"
+
+    - name: Extract SQLite amalgamation
+      unarchive:
+        src: "/tmp/sqlite-amalgamation.zip"
+        dest: "/tmp/"
+        remote_src: yes
+
+    - name: Extract SQLite source
+      unarchive:
+        src: "/tmp/sqlite-src.zip"
+        dest: "/tmp/"
+        remote_src: yes
+
+    - name: Copy regexp.c to amalgamation directory
+      copy:
+        src: "/tmp/sqlite-src-{{ sqlite_version }}/ext/misc/regexp.c"
+        dest: "/tmp/sqlite-amalgamation-{{ sqlite_version }}/regexp.c"
+        remote_src: yes
+
+    - name: Compile SQLite regexp extension
+      command: gcc -g -fPIC -shared regexp.c -o regexp.so
+      args:
+        chdir: "/tmp/sqlite-amalgamation-{{ sqlite_version }}"
+        creates: "/tmp/sqlite-amalgamation-{{ sqlite_version }}/regexp.so"
+
+    - name: Create EPGStation directory
+      file:
+        path: "{{ epgstation_dir }}"
+        state: directory
+
+    - name: Copy EPGStation source to LXC
+      synchronize:
+        src: ../
+        dest: "{{ epgstation_dir }}"
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=node_modules"
+          - "--exclude=client/node_modules"
+
+    - name: Copy compiled regexp.so to EPGStation
+      copy:
+        src: "/tmp/sqlite-amalgamation-{{ sqlite_version }}/regexp.so"
+        dest: "{{ epgstation_dir }}/regexp.so"
+        remote_src: yes
+
+    - name: Install EPGStation dependencies
+      command: npm ci
+      args:
+        chdir: "{{ epgstation_dir }}"
+
+    - name: Install EPGStation client dependencies
+      command: npm ci --ignore-scripts
+      args:
+        chdir: "{{ epgstation_dir }}/client"
+
+    - name: Build EPGStation
+      command: npm run build
+      args:
+        chdir: "{{ epgstation_dir }}"
+
+    - name: Configure EPGStation config.yml
+      shell: |
+        cp config/config.yml.template config/config.yml
+        sed -i "s|mirakurunPath: 'http+unix://%2Fvar%2Frun%2Fmirakurun.sock/'|mirakurunPath: 'http://localhost:40772'|g" config/config.yml
+        # Uncomment sqlite regexp lines
+        sed -i "s|# sqlite:|sqlite:|g" config/config.yml
+        sed -i "s|#   extensions:|  extensions:|g" config/config.yml
+        sed -i "s|#     - '/opt/epgstation/regexp.so'|    - '{{ epgstation_dir }}/regexp.so'|g" config/config.yml
+        sed -i "s|#   regexp: true|  regexp: true|g" config/config.yml
+      args:
+        chdir: "{{ epgstation_dir }}"
+
+    - name: Configure EPGStation log configs
+      shell: |
+        cp config/operatorLogConfig.sample.yml config/operatorLogConfig.yml
+        cp config/epgUpdaterLogConfig.sample.yml config/epgUpdaterLogConfig.yml
+        cp config/serviceLogConfig.sample.yml config/serviceLogConfig.yml
+        cp config/enc.js.template config/enc.js
+      args:
+        chdir: "{{ epgstation_dir }}"
+        creates: "{{ epgstation_dir }}/config/operatorLogConfig.yml"
+
+    - name: Deploy EPGStation systemd service
+      template:
+        src: templates/epgstation.service.j2
+        dest: /etc/systemd/system/epgstation.service
+
+    - name: Enable and start EPGStation
+      systemd:
+        name: epgstation
+        enabled: yes
+        state: restarted
+        daemon_reload: yes

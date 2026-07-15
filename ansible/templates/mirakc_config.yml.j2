@@ -1,0 +1,14 @@
+server:
+  addrs:
+    - http: '0.0.0.0:40772'
+
+tuners:
+  - name: dummy-tuner
+    types: [GR]
+    command: >-
+      echo "Dummy tuner configured"
+
+channels:
+  - name: DummyChannel
+    type: GR
+    channel: '27'

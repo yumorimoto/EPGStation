@@ -1,0 +1,21 @@
+[Unit]
+Description=mirakc
+# Ensures the network is up before starting the API
+Wants=network-online.target
+After=network-online.target
+# Crucial for LXC: Wait until the Proxmox bind mount for /dev/dvb is fully established
+RequiresMountsFor=/dev/dvb
+
+[Service]
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/local/bin/mirakc -c /etc/mirakc/config.yml
+Restart=always
+RestartSec=5
+Type=simple
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mirakc
+Environment="RUST_LOG=info,mirakc=debug"
+
+[Install]
+WantedBy=multi-user.target
