@@ -482,6 +482,7 @@ export interface M2TSStreamParam {
  * クライアントが受け取る設定情報
  */
 export interface Config {
+    isSqliteBackupSuspended?: boolean;
     socketIOPort: number;
     broadcast: BroadcastStatus;
     recorded: string[];

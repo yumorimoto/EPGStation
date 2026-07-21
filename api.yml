@@ -189,6 +189,11 @@ components:
                 socketIOPort:
                     description: socket.io 通信で使用するポート
                     type: integer
+
+                isSqliteBackupSuspended:
+                    description: If automated backups are suspended due to detected SQLite corruption
+                    type: boolean
+
                 broadcast:
                     description: 有効な放送波情報
                     type: object
