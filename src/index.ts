@@ -14,6 +14,8 @@ import * as containerSetter from './model/ModelContainerSetter';
 import IRecordingManageModel from './model/operator/recording/IRecordingManageModel';
 import IReservationManageModel from './model/operator/reservation/IReservationManageModel';
 import IStorageManageModel from './model/operator/storage/IStorageManageModel';
+import IMaintenanceManageModel from './model/maintenance/IMaintenanceManageModel';
+
 install();
 
 containerSetter.set(container);
@@ -87,6 +89,9 @@ const runOperator = async () => {
 
     const storageManageModel = container.get<IStorageManageModel>('IStorageManageModel');
     storageManageModel.start();
+
+    const maintenanceManageModel = container.get<IMaintenanceManageModel>('IMaintenanceManageModel');
+    maintenanceManageModel.start();
 };
 
 /**

@@ -39,7 +39,17 @@ export interface KodiInfo {
 /**
  * config ファイル形式
  */
+
+export interface BackupConfig {
+    enable: boolean;
+    directory?: string;
+    retentionDays?: number;
+    schedule?: string;
+    requireIdle?: boolean;
+}
+
 export default interface IConfigFile {
+    backup?: BackupConfig;
     port?: number;
     socketioPort?: number;
     clientSocketioPort?: number;
