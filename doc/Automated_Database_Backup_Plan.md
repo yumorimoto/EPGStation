@@ -49,6 +49,11 @@ If the system is busy, the maintenance is deferred and retried every 15 minutes.
 ### 4. Rotation and Cleanup
 After a successful backup, `MaintenanceManageModel` scans the backup directory. It parses the modification times of existing backup files (`database_*.db`) and deletes any files older than the configured `retentionDays`.
 
+### 5. Startup Diagnostics
+Upon startup (`ConnectionCheckModel`), an additional diagnostic runs:
+- Verifies if the `data/backup_suspended.lock` file exists and logs a `[FATAL]` warning if database corruption was previously detected.
+- Runs `PRAGMA integrity_check` directly and verifies the database is `ok` before proceeding fully with normal operations. If not, a `[FATAL]` error is logged to clearly signify issues.
+
 ## Original Architectural Concepts & Alternatives (Retained for Reference)
 
 ### Backup Execution Strategy
