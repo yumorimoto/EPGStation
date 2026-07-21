@@ -11,6 +11,12 @@ import IEncodeManageModel from '../service/encode/IEncodeManageModel';
 import IReserveDB from '../db/IReserveDB';
 import IMaintenanceManageModel from './IMaintenanceManageModel';
 
+/**
+ * MaintenanceManageModel
+ * データベースのバックアップと診断（integrity_check）を定期的に実行するモデル。
+ * 録画やエンコードが実行されていないアイドル状態の時にのみバックアップを行う。
+ * データベースの破損を検知した場合はバックアップを停止し、安全性を保つ。
+ */
 @injectable()
 export default class MaintenanceManageModel implements IMaintenanceManageModel {
     private log: ILogger;
