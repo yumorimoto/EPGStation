@@ -39,13 +39,17 @@ function makeRequest(url, method = 'GET', data = null) {
                         resolve(body);
                     }
                 } else {
-                    reject(new Error(`Request failed with status ${res.statusCode}: ${body}`));
+                    const err = new Error(`Request failed with status ${res.statusCode}`);
+                    err.status = res.statusCode;
+                    err.responseBody = body;
+                    reject(err);
                 }
             });
         });
 
         req.on('error', (e) => {
-            reject(new Error(`Network error: ${e.message}`));
+            const err = new Error(`Network error: ${e.message}`);
+            reject(err);
         });
 
         if (data) {
@@ -71,6 +75,9 @@ async function backup() {
         console.log('Backup successful!');
     } catch (err) {
         console.error('Error during backup:', err.message);
+        if (err.responseBody) {
+            console.error('Response Body:', err.responseBody);
+        }
         console.log('Make sure EPGStation is running on localhost:8888');
     }
 }
@@ -110,7 +117,18 @@ async function restore() {
                 console.log(`Restored rule: ${rule.searchOption ? rule.searchOption.keyword : 'Time specified rule'}`);
             } catch (err) {
                 failCount++;
-                console.error(`Failed to restore rule (Keyword: ${rule.searchOption ? rule.searchOption.keyword : 'N/A'}):`, err.message);
+                console.error(`\n[FAILED] Failed to restore rule (Keyword: ${rule.searchOption ? rule.searchOption.keyword : 'N/A'}):`);
+                console.error(`Reason: ${err.message}`);
+                if (err.status) {
+                    console.error(`Status Code: ${err.status}`);
+                }
+                if (err.responseBody) {
+                    console.error(`Server Response: ${err.responseBody}`);
+                }
+                console.error(`Attempted Payload: ${JSON.stringify({
+                    keyword: rule.searchOption ? rule.searchOption.keyword : 'N/A',
+                    isTimeSpecification: rule.isTimeSpecification
+                })}\n`);
             }
         }
 
