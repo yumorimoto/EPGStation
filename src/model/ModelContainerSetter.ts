@@ -94,6 +94,9 @@ import ExecutionManagementModel from './ExecutionManagementModel';
 import IConfiguration from './IConfiguration';
 import IConnectionCheckModel from './IConnectionCheckModel';
 import IExecutionManagementModel from './IExecutionManagementModel';
+import IMaintenanceManageModel from './maintenance/IMaintenanceManageModel';
+import MaintenanceManageModel from './maintenance/MaintenanceManageModel';
+
 import ILoggerModel from './ILoggerModel';
 import IMirakurunClientModel from './IMirakurunClientModel';
 import IIPCClient from './ipc/IIPCClient';
@@ -231,6 +234,8 @@ export const set = (container: Container): void => {
     container.bind<IReserveOptionChecker>('IReserveOptionChecker').to(ReserveOptionChecker).inSingletonScope();
 
     container.bind<IMirakurunClientModel>('IMirakurunClientModel').to(MirakurunClientModel).inSingletonScope();
+
+    container.bind<IMaintenanceManageModel>('IMaintenanceManageModel').to(MaintenanceManageModel).inSingletonScope();
 
     container.bind<IEPGUpdateManageModel>('IEPGUpdateManageModel').to(EPGUpdateManageModel).inSingletonScope();
 

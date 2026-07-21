@@ -1,4 +1,6 @@
 import { inject, injectable } from 'inversify';
+import * as fs from 'fs';
+import * as path from 'path';
 import * as apid from '../../../../api';
 import IConfiguration from '../../IConfiguration';
 import IIPCClient from '../../ipc/IIPCClient';
@@ -72,7 +74,19 @@ export default class ConfigApiModel implements IConfigApiModel {
             },
         };
 
+
         result.broadcast = await this.ipc.reserveation.getBroadcastStatus();
+
+        // Check if backup is suspended
+        result.isSqliteBackupSuspended = false;
+        if (config.dbtype === 'sqlite') {
+            const dataDir = path.join(__dirname, '..', '..', '..', '..', 'data');
+            const lockFile = path.join(dataDir, 'backup_suspended.lock');
+            if (fs.existsSync(lockFile)) {
+                result.isSqliteBackupSuspended = true;
+            }
+        }
+
         result.isEnableTSLiveStream = false;
         result.isEnableTSRecordedStream = false;
         result.isEnableEncodedRecordedStream = false;

@@ -1,5 +1,8 @@
 <template>
     <div>
+        <v-snackbar v-model="isSqliteBackupSuspended" color="error" :timeout="-1" :bottom="true" class="mb-4">
+            Critical Error: SQLite Database Corruption Detected! Automated Backups are Suspended. Please check the logs.
+        </v-snackbar>
         <transition name="snackbar">
             <div v-if="snackbarState.isOpen === true" class="snackbar-wrap">
                 <div class="d-flex justify-center" style="position: relative">
@@ -17,11 +20,22 @@
 
 <script lang="ts">
 import container from '@/model/ModelContainer';
+import ServerConfigModel from '@/model/serverConfig/IServerConfigModel';
 import ISnackbarState from '@/model/state/snackbar/ISnackbarState';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 
 @Component({})
 export default class Snackbar extends Vue {
+    public isSqliteBackupSuspended: boolean = false;
+
+    public mounted(): void {
+        const serverConfigModel = container.get<ServerConfigModel>('IServerConfigModel');
+        const config = serverConfigModel.getConfig();
+        if (config !== null && config.isSqliteBackupSuspended === true) {
+            this.isSqliteBackupSuspended = true;
+        }
+    }
+
     public snackbarState: ISnackbarState = container.get<ISnackbarState>('ISnackbarState');
 
     get snackbarClass(): any {
