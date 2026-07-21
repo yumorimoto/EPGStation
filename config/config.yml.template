@@ -16,20 +16,20 @@ dbtype: sqlite
 #     database: epgstation
 #     charset: utf8mb4
 
+# 囲み文字を置換するか
 
 # データベースの自動バックアップ設定 (sqliteのみ対応)
 backup:
     enable: false
     # バックアップ先ディレクトリ (デフォルト: %DATA_DIR%/backups)
     # directory: '%DATA_DIR%/backups'
-    # 保存する日数 (デフォルト: 7)
+    # 保存する世代数 (デフォルト: 7)
     # retentionDays: 7
-    # 実行するスケジュール。cron形式 (デフォルト: '0 4 * * *' 毎日午前4時)
+    # 実行するスケジュール。cron形式 (デフォルト: '0 4 * * *')
     # schedule: '0 4 * * *'
     # 録画・エンコード中でないときのみバックアップを実行するか (デフォルト: true)
     # requireIdle: true
 
-# 囲み文字を置換するか
 needToReplaceEnclosingCharacters: true
 
 epgUpdateIntervalTime: 10
