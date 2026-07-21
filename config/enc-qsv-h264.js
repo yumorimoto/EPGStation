@@ -112,7 +112,7 @@ if (broadcastDate) args.push('-metadata', `date=${broadcastDate}`);
 // vpp_qsv=deinterlace=2: Uses advanced hardware deinterlacing
 // vpp_qsv=framerate=30000/1001: Sets the framerate to 29.97fps
 // vpp_qsv=rate=1: Maintains the framerate
-let videoFilter = 'vpp_qsv=deinterlace=2,vpp_qsv=framerate=30000/1001,vpp_qsv=rate=1';
+let videoFilter = 'vpp_qsv=deinterlace=2:framerate=30000/1001:rate=1';
 
 // Parse optional max resolution from command line arguments (e.g. -r 720)
 let maxResolution = NaN;
@@ -128,7 +128,7 @@ if (!isNaN(maxResolution) && maxResolution > 0 && videoHeight > maxResolution) {
   // and set width to -1 (or more accurately w=ow/oh*h in some contexts, but -1 keeps aspect ratio)
   // For QSV, scale_qsv=-1:maxResolution or using vpp_qsv=h=maxResolution:w=-1 is preferred.
   // However, vpp_qsv handles it best:
-  videoFilter += `,vpp_qsv=h=${maxResolution}:w=-1`;
+  videoFilter += `:h=${maxResolution}:w=-1`;
 }
 
 args.push('-vf', videoFilter);

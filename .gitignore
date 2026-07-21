@@ -25,3 +25,4 @@ dist
 data/upload/*
 data/key/*
 !.gitkeep
+tools/rules_backup.json
