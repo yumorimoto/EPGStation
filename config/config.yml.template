@@ -24,8 +24,8 @@ backup:
     # directory: '%DATA_DIR%/backups'
     # 保存する日数 (デフォルト: 7)
     # retentionDays: 7
-    # 実行するスケジュール。cron形式 (デフォルト: '0 4 * * *' 毎日午前4時)
-    # schedule: '0 4 * * *'
+    # 実行するスケジュール (時間)。 (デフォルト: 4 毎日午前4時)
+    # backupHour: 4
     # 録画・エンコード中でないときのみバックアップを実行するか (デフォルト: true)
     # requireIdle: true
 

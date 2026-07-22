@@ -44,7 +44,7 @@ export interface BackupConfig {
     enable: boolean;
     directory?: string;
     retentionDays?: number;
-    schedule?: string;
+    backupHour?: number;
     requireIdle?: boolean;
 }
 
