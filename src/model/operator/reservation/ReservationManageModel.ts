@@ -1659,12 +1659,28 @@ class ReservationManageModel implements IReservationManageModel {
                 return this.sortReserve(a.reserve, b.reserve);
             });
 
-            this.log.system.debug('--------------------');
-            for (const r of reserves) {
-                this.log.system.debug(<any>{
-                    name: r.reserve.name,
-                    ruleId: r.reserve.ruleId,
-                });
+            if (reserves.length > 0) {
+                const date = new Date(l.time);
+                // format YYYY-MM-DDTHH:mm
+                const tzOffset = date.getTimezoneOffset() * 60000;
+                const localISOTime = new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+
+                const typeCounts: { [key: string]: number } = {};
+                for (const r of reserves) {
+                    typeCounts[r.reserve.channelType] = (typeCounts[r.reserve.channelType] || 0) + 1;
+                }
+
+                const countsStr = Object.keys(typeCounts)
+                    .map(type => `${typeCounts[type]} ${type}`)
+                    .join(', ');
+
+                const programsStr = reserves
+                    .map(r => `${r.reserve.name} (rule: ${r.reserve.ruleId}, ch: ${r.reserve.channel})`)
+                    .join(', ');
+
+                this.log.system.debug(`${localISOTime} (${countsStr}) - ${programsStr}`);
+            } else {
+                this.log.system.debug('--------------------');
             }
 
             // tuner clear
