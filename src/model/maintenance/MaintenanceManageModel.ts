@@ -69,11 +69,14 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
     }
 
     public start(): void {
+        this.log.system.debug('MaintenanceManageModel start() invoked');
         if (this.config.dbtype !== 'sqlite') {
+            this.log.system.debug('Maintenance aborted: dbtype is not sqlite');
             return;
         }
 
         if (this.config.backup?.enable !== true) {
+            this.log.system.debug('Maintenance aborted: backup.enable is not true');
             return;
         }
 
@@ -91,18 +94,16 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
     }
 
     private async checkAndRunMaintenance(): Promise<void> {
-        if (this.isBackupSuspended) {
-            return;
-        }
-
-        // check cron format loosely (hour based)
-        const schedule = this.config.backup?.schedule || '0 4 * * *';
-        const parts = schedule.split(' ');
-        const targetHourStr = parts[1] || '4';
-        const targetHour = parseInt(targetHourStr, 10);
-
+        const targetHour = this.config.backup?.backupHour ?? 4;
         const now = new Date();
         const currentHour = now.getHours();
+
+        this.log.system.debug(`Checking maintenance schedule. Current hour: ${currentHour}, Target hour: ${targetHour}`);
+
+        if (this.isBackupSuspended) {
+            this.log.system.debug('Maintenance aborted: isBackupSuspended is true');
+            return;
+        }
         const todayStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 
         if (currentHour < targetHour) {
@@ -179,6 +180,7 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
             });
 
             if (imminent) {
+                this.log.system.debug('System is not idle: Active or imminent recording found');
                 return false;
             }
         } catch (e) {
@@ -190,6 +192,7 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
         try {
             const queueInfo = this.encodeManageModel.getEncodeInfo();
             if (queueInfo.runningQueue.length > 0) {
+                this.log.system.debug('System is not idle: Active encoding running');
                 return false;
             }
         } catch (e) {

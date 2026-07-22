@@ -29,12 +29,14 @@ class Configuration implements IConfiguration {
 
         this.config = this.readConfig(Configuration.CONFIG_FILE_PATH, false);
         this.log.system.info('config.yml read success');
+        this.log.system.debug(`Parsed backup config: ${JSON.stringify(this.config.backup || {})}`);
 
         fs.watchFile(Configuration.CONFIG_FILE_PATH, async () => {
             this.log.system.info('updated config file');
             try {
                 const newConfig = <any>yaml.load(await fs.promises.readFile(Configuration.CONFIG_FILE_PATH, 'utf-8'));
                 this.config = this.formatConfig(newConfig);
+                this.log.system.debug(`Parsed backup config: ${JSON.stringify(this.config.backup || {})}`);
             } catch (err: any) {
                 this.log.system.error('read config error');
                 this.log.system.error(err);
