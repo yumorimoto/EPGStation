@@ -74,7 +74,6 @@ export default class ConfigApiModel implements IConfigApiModel {
             },
         };
 
-
         result.broadcast = await this.ipc.reserveation.getBroadcastStatus();
 
         // Check if backup is suspended
