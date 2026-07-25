@@ -20,6 +20,7 @@ class ExecutionManagementModel implements IExecutionManagementModel {
 
     constructor(@inject('ILoggerModel') logger: ILoggerModel) {
         this.log = logger.getLogger();
+        this.exeEventEmitter.setMaxListeners(100);
     }
 
     private getCallerContext(): string {
