@@ -34,6 +34,8 @@ needToReplaceEnclosingCharacters: true
 
 epgUpdateIntervalTime: 10
 
+# epgUpdateEndCommand: "%NODE% %ROOT%/config/detect-continuations.js"
+
 conflictPriority: 1
 recPriority: 2
 
