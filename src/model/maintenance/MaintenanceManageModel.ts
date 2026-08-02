@@ -35,6 +35,7 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
     private lastAttemptDay: string | null = null;
     private attemptCount: number = 0;
     private isBackupSuspended: boolean = false;
+    private lastSuccessfulBackupDate: string | null = null;
 
     constructor(
         @inject('ILoggerModel') logger: ILoggerModel,
@@ -98,7 +99,7 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
         const now = new Date();
         const currentHour = now.getHours();
 
-        this.log.system.debug(`Checking maintenance schedule. Current hour: ${currentHour}, Target hour: ${targetHour}`);
+        this.log.system.debug(`Checking maintenance schedule. Current hour: ${currentHour}, Target hour: ${targetHour}, attemptCount: ${this.attemptCount}, lastAttemptDay: ${this.lastAttemptDay}`);
 
         if (this.isBackupSuspended) {
             this.log.system.debug('Maintenance aborted: isBackupSuspended is true');
@@ -107,6 +108,19 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
         const todayStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 
         if (currentHour < targetHour) {
+            return;
+        }
+
+        const backupDateStr = this.getBackupDateStr(now);
+
+        if (this.lastSuccessfulBackupDate === backupDateStr) {
+            this.log.system.debug('Maintenance skipped: Backup already completed today (in-memory check).');
+            return;
+        }
+
+        if (await this.verifyExistingBackup(backupDateStr)) {
+            this.log.system.info(`Maintenance skipped: Backup already exists and passed integrity check for ${backupDateStr}.`);
+            this.lastSuccessfulBackupDate = backupDateStr;
             return;
         }
 
@@ -134,11 +148,6 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
             }
         }
 
-        if (this.attemptCount === -1) {
-            // Already succeeded today
-            return;
-        }
-
         this.log.system.info('Running database diagnostic and backup...');
 
         try {
@@ -153,8 +162,7 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
             await this.runBackup();
             this.cleanupOldBackups();
 
-            // Mark as done for the day
-            this.attemptCount = -1;
+            this.lastSuccessfulBackupDate = this.getBackupDateStr(new Date());
         } catch (err: any) {
             this.log.system.error('Error during maintenance window');
             this.log.system.error(err);
@@ -272,5 +280,35 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
             this.log.system.error('Error cleaning up old backups');
             this.log.system.error(e);
         }
+    }
+
+    private getBackupDateStr(date: Date): string {
+        return `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+    }
+
+    private verifyExistingBackup(dateStr: string): Promise<boolean> {
+        return new Promise(resolve => {
+            const backupFile = path.join(this.backupDir, `database_${dateStr}.db`);
+            if (!fs.existsSync(backupFile)) {
+                resolve(false);
+                return;
+            }
+
+            const stats = fs.statSync(backupFile);
+            if (stats.size === 0) {
+                resolve(false);
+                return;
+            }
+
+            const cmd = `sqlite3 "${backupFile}" "PRAGMA integrity_check;"`;
+            child_process.exec(cmd, (error, stdout) => {
+                if (error || stdout.trim().toLowerCase() !== 'ok') {
+                    this.log.system.error(`Backup integrity check failed for ${backupFile}`);
+                    resolve(false);
+                    return;
+                }
+                resolve(true);
+            });
+        });
     }
 }
