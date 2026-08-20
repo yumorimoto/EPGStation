@@ -99,7 +99,9 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
         const now = new Date();
         const currentHour = now.getHours();
 
-        this.log.system.debug(`Checking maintenance schedule. Current hour: ${currentHour}, Target hour: ${targetHour}, attemptCount: ${this.attemptCount}, lastAttemptDay: ${this.lastAttemptDay}`);
+        this.log.system.debug(
+            `Checking maintenance schedule. Current hour: ${currentHour}, Target hour: ${targetHour}, attemptCount: ${this.attemptCount}, lastAttemptDay: ${this.lastAttemptDay}`,
+        );
 
         if (this.isBackupSuspended) {
             this.log.system.debug('Maintenance aborted: isBackupSuspended is true');
@@ -119,7 +121,9 @@ export default class MaintenanceManageModel implements IMaintenanceManageModel {
         }
 
         if (await this.verifyExistingBackup(backupDateStr)) {
-            this.log.system.info(`Maintenance skipped: Backup already exists and passed integrity check for ${backupDateStr}.`);
+            this.log.system.info(
+                `Maintenance skipped: Backup already exists and passed integrity check for ${backupDateStr}.`,
+            );
             this.lastSuccessfulBackupDate = backupDateStr;
             return;
         }
