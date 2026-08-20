@@ -15,6 +15,7 @@ class ExecutionManagementModel implements IExecutionManagementModel {
     private log: ILogger;
 
     private lockId: string | null = null;
+    private lockContext: string | null = null;
     private exeQueue: ExeQueueData[] = [];
     private exeEventEmitter: events.EventEmitter = new events.EventEmitter();
 
@@ -60,8 +61,11 @@ class ExecutionManagementModel implements IExecutionManagementModel {
             // タイムアウト設定
             const timerId = setTimeout(() => {
                 this.log.system.error(`get execution error: ${exeQueueData.context} priority: ${priority}`);
+                const holderContext = this.lockContext ? this.lockContext : 'Unknown';
                 this.log.system.error(
-                    `execution id ${exeQueueData.id} (${exeQueueData.context}) timed out. Current queue length: ${this.exeQueue.length}`,
+                    `execution id ${exeQueueData.id} (${exeQueueData.context}) timed out. ` +
+                        `Current queue length: ${this.exeQueue.length}. ` +
+                        `Current lock holder: ${this.lockId} (${holderContext})`,
                 );
 
                 const index = this.exeQueue.findIndex(q => q.id === exeQueueData.id);
@@ -129,6 +133,7 @@ class ExecutionManagementModel implements IExecutionManagementModel {
         if (this.lockId === id) {
             // アンロック
             this.lockId = null;
+            this.lockContext = null;
         }
 
         if (this.lockId === null) {
@@ -136,6 +141,7 @@ class ExecutionManagementModel implements IExecutionManagementModel {
             const q = this.exeQueue.shift();
             if (typeof q !== 'undefined') {
                 this.lockId = q.id;
+                this.lockContext = q.context;
                 this.exeEventEmitter.emit(ExecutionManagementModel.UNLOCK_EVENT, q.id);
             }
         }
